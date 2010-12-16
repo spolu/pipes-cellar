@@ -1,8 +1,9 @@
 var util = require('util');
 var fwk = require('fwk');
 
-var config = require("./config.js");
-
+var cfg = require("./config.js");
+var mongo = require("./mongo.js");
+var mutator = require("./mutator.js");
 
 /**
  * The Cellar Object
@@ -17,36 +18,86 @@ var cellar = function(spec, my) {
   
   fwk.populateConfig(cfg.config);  
   my.cfg = cfg.config;
+  my.logger = fwk.logger();
   
   my.registration = spec.registration || my.cfg['PIPE_REGISTRATION'];
   my.tag = spec.tag || my.cfg['PIPE_TAG'];
   
   /** Defaults will be overridden by configuration */
-  my.pipe = require('pipe').pipe({});
-  
+  my.pipe = require('pipe').pipe({});  
+  my.mongp = mongo.mongo({ config: my.cfg });
+
+  my.mutator = mutator.mutator({ pipe: my.pipe,
+				 mongo: my.mongo,
+				 config: my.cfg });
 
   var that = {};
   
-  pipe.on('1w', function(id, msg) { 
-	    try {
-	      var subj = {};
-	      if(msg.subject())
-		subj = JSON.parse(msg.subject());
-	
-	      switch(subj.action) {
-	      case 'MUT':
-		break;
-	      case 'GET':
-		break;
-	      default:
-		/** do nothing */
-		break;
-	      } 	      	      
-	    } catch (err) {
-	      console.log('error');
-	    }
-	  });
-  pipe.on('2w', function(id, msg) { });
+  var forward;
+
+  forward = function(id, msg) {
+    var action = require('cellar')
+      .action.decapsulate({ msg: msg,
+			    config: my.cfg,
+			    logger: my.logger });
+    
+    /** error handling */
+    action.on('error', function(err) {
+		if(action.msg().type() === '2w') {
+		  var reply = fwk.message.reply(action.msg());
+		  reply.setBody({ error: err.message });
+		  my.pipe.send(reply, function(err, hdr, res) {
+				 if(err)
+				   action.log.error(err);
+			       });
+		}
+		/** else nothing to do */
+		/** TODO push an error mesage */
+	      });
+
+    switch(action.type() + '-' + action.msg().type()) {
+    case 'MUT-1w':  
+    case 'MUT-2w':  
+      action.push('MUT');
+      action.log.out('from:' + id + ' ' + action.toString());
+      my.mutator.mutator(action, function(res) {
+			   if(action.msg().type() === '2w') {
+			     var reply = fwk.message.reply(action.msg());
+			     reply.setBody(res);
+			     my.pipe.send(reply, function(err, hdr, res) {
+					    if(err)
+					      action.log.error(err);
+					  });
+			   }
+			 });
+      break;
+    case 'GET-2w':
+      action.push('GET');
+      action.log.out('from:' + id + ' ' + action.toString());
+      my.getter.getter(action, function(res) {
+			 if(action.msg().type() === '2w') {
+			   var reply = fwk.message.reply(action.msg());
+			   reply.setBody(res);
+			   my.pipe.send(reply, function(err, hdr, res) {
+					  if(err)
+					    action.log.error(err);
+					});
+			 }
+		       });
+      break;
+    case 'UPD-1w':
+      action.push('UPD');
+      action.log.out('from:' + id + ' ' + action.toString());
+      my.mutator.updater(action);
+    default:
+      action.log.out('from:' + id + ' ignored ' + action.toString());
+      break;
+    }        
+  };
+
+
+  pipe.on('1w', forward);
+  pipe.on('2w', forward);
 
   pipe.on('disconnect', function(id) {
 	    console.log('disconnect ' + id);
@@ -59,8 +110,11 @@ var cellar = function(spec, my) {
   pipe.on('error', function(err, id) {
 	    console.log('error ' + id + ':' + err.stack);
 	  });
-
+  
   pipe.subscribe(my.registration, my.tag);    
   
   return that;
 };
+
+/** main */
+cellar({});
