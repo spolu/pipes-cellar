@@ -1,5 +1,7 @@
 TODOs:
 
+- resiliance to mongoDB disconnect + queue?
 - push error message onto pipe whenever an action fail
+
 
 CHANGELOG v0.1.0:

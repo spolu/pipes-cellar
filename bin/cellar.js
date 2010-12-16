@@ -54,13 +54,26 @@ var cellar = function(spec, my) {
 		/** else nothing to do */
 		/** TODO push an error mesage */
 	      });
-
-    switch(action.type() + '-' + action.msg().type()) {
-    case 'MUT-1w':  
-    case 'MUT-2w':  
-      action.push('MUT');
-      action.log.out('from:' + id + ' ' + action.toString());
-      my.mutator.mutator(action, function(res) {
+    
+    try {      
+      switch(action.type() + '-' + action.msg().type()) {
+      case 'MUT-1w':  
+      case 'MUT-2w':  
+	action.log.out('from:' + id + ' ' + action.toString());
+	my.mutator.mutator(action, function(res) {
+			     if(action.msg().type() === '2w') {
+			       var reply = fwk.message.reply(action.msg());
+			       reply.setBody(res);
+			       my.pipe.send(reply, function(err, hdr, res) {
+					      if(err)
+						action.log.error(err);
+					    });
+			     }
+			   });
+	break;
+      case 'GET-2w':
+	action.log.out('from:' + id + ' ' + action.toString());
+	my.getter.getter(action, function(res) {
 			   if(action.msg().type() === '2w') {
 			     var reply = fwk.message.reply(action.msg());
 			     reply.setBody(res);
@@ -70,48 +83,38 @@ var cellar = function(spec, my) {
 					  });
 			   }
 			 });
-      break;
-    case 'GET-2w':
-      action.push('GET');
-      action.log.out('from:' + id + ' ' + action.toString());
-      my.getter.getter(action, function(res) {
-			 if(action.msg().type() === '2w') {
-			   var reply = fwk.message.reply(action.msg());
-			   reply.setBody(res);
-			   my.pipe.send(reply, function(err, hdr, res) {
-					  if(err)
-					    action.log.error(err);
-					});
-			 }
-		       });
-      break;
-    case 'UPD-1w':
-      action.push('UPD');
-      action.log.out('from:' + id + ' ' + action.toString());
-      my.mutator.updater(action);
-    default:
-      action.log.out('from:' + id + ' ignored ' + action.toString());
-      break;
-    }        
+	break;
+      case 'UPD-1w':
+	action.log.out('from:' + id + ' ' + action.toString());
+	my.mutator.updater(action);
+	break;
+      default:
+	action.log.out('from:' + id + ' ignored ' + action.toString());
+	break;
+      }        
+    }
+    catch(err) {
+      action.error(err, true);      
+    }
   };
 
 
-  pipe.on('1w', forward);
-  pipe.on('2w', forward);
+  my.pipe.on('1w', forward);
+  my.pipe.on('2w', forward);
 
-  pipe.on('disconnect', function(id) {
-	    console.log('disconnect ' + id);
-	  });
+  my.pipe.on('disconnect', function(id) {
+	       console.log('disconnect ' + id);
+	     });
   
-  pipe.on('connect', function(id) {
-	    console.log('connect ' + id); 
-	  });
-
-  pipe.on('error', function(err, id) {
-	    console.log('error ' + id + ':' + err.stack);
-	  });
+  my.pipe.on('connect', function(id) {
+	       console.log('connect ' + id); 
+	     });
   
-  pipe.subscribe(my.registration, my.tag);    
+  my.pipe.on('error', function(err, id) {
+	       console.log('error ' + id + ':' + err.stack);
+	     });
+  
+  my.pipe.subscribe(my.registration, my.tag);    
   
   return that;
 };

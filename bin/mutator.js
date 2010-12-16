@@ -13,7 +13,7 @@ var mongo = require("./mongo.js");
  *
  * @extends {}
  *  
- * @param spec {pipe, config}
+ * @param spec {pipe, mongo, config}
  */
 var mutator = function(spec, my) {
   my = my || {};
@@ -21,7 +21,7 @@ var mutator = function(spec, my) {
   
   my.cfg = spec.config || cfg.config;
   my.pipe = spec.pipe;  
-  my.mongp = spec.mongo || mongo.mongo({ config: my.cfg });
+  my.mongo = spec.mongo || mongo.mongo({ config: my.cfg });
 
   my.updaters = {};
   
@@ -29,29 +29,38 @@ var mutator = function(spec, my) {
   
   var updater, mutator;
   
+  /** cb_() */
   updater = function(action) {
-    if(action.body() && 
-       action.subject() && 
-       action.subject().length > 0) {
-      
-      action.log.debug('updater evaluating: ' + action.body());
-      eval("var updaterfun = " + action.body());
-
-      if(typeof updaterfun === 'function') {
-	my.updaters[action.subject()] = function(spec) {
-	  try {
-	    return updaterfun(spec);
-	  } catch (err) { 
-	    action.log.error(err, true);
-	    return {};
-	  }
-	};
-      }            
-    }    
+    if(!action.body() ||
+       !action.subject() ||
+       action.subject().length == 0) {
+      action.error(new Error('Missing body or subject'));
+      return;           
+    }
+    
+    action.log.debug('updater evaluating: ' + action.body());
+    eval("var updaterfun = " + action.body());
+    
+    if(typeof updaterfun === 'function') {
+      my.updaters[action.subject()] = function(spec, cb_) {
+	try {
+	  return updaterfun(spec, cb_);
+	} catch (err) { 
+	  action.log.error(err, true);
+	  return null;
+	}
+      };
+    } 
+    else
+      action.error(new Error('Updater is not a function'));      
   };
   
   /** cb_(res) */
   mutator = function(action, cb_) {
+    if(action.targets().length === 0) {
+      action.error(new Error('No target defined'));
+      return;      
+    }
     if(action.targets().length !== 1) {
       action.error(new Error('Multiple target update'));
       return;      
@@ -89,8 +98,13 @@ var mutator = function(spec, my) {
 	});
     };
     
-    looopfun(action.targets()[0]);    
+    loopfun(action.targets()[0]);    
   };
+  
+  that.method('updater', updater);
+  that.method('mutator', mutator);
 
   return that;
 };
+
+exports.mutator = mutator;
