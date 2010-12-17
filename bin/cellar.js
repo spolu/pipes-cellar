@@ -4,6 +4,7 @@ var fwk = require('fwk');
 var cfg = require("./config.js");
 var mongo = require("./mongo.js");
 var mutator = require("./mutator.js");
+var accessor = require("./accessor.js");
 
 /**
  * The Cellar Object
@@ -25,11 +26,14 @@ var cellar = function(spec, my) {
   
   /** Defaults will be overridden by configuration */
   my.pipe = require('pipe').pipe({});  
-  my.mongp = mongo.mongo({ config: my.cfg });
+  my.mongo = mongo.mongo({ config: my.cfg });
 
   my.mutator = mutator.mutator({ pipe: my.pipe,
 				 mongo: my.mongo,
-				 config: my.cfg });
+				 config: my.cfg });  
+  my.accessor = accessor.accessor({ pipe: my.pipe,
+				    mongo: my.mongo,
+				    config: my.cfg });
 
   var that = {};
   
@@ -72,22 +76,26 @@ var cellar = function(spec, my) {
 			     }
 			   });
 	break;
-      case 'GET-2w':
+      case 'ACC-2w':
 	action.log.out(action.toString());
-	my.getter.getter(action, function(res) {
-			   if(action.msg().type() === '2w') {
-			     var reply = fwk.message.reply(action.msg());
-			     reply.setBody(res);
-			     my.pipe.send(reply, function(err, hdr, res) {
-					    if(err)
-					      action.log.error(err);
-					  });
-			   }
-			 });
+	my.accessor.accessor(action, function(res) {
+			       if(action.msg().type() === '2w') {
+				 var reply = fwk.message.reply(action.msg());
+				 reply.setBody(res);
+				 my.pipe.send(reply, function(err, hdr, res) {
+						if(err)
+						  action.log.error(err);
+					      });
+			       }
+			     });
 	break;
       case 'UPD-1w':
 	action.log.out(action.toString());
 	my.mutator.updater(action);
+	break;
+      case 'GET-1w':
+	action.log.out(action.toString());
+	my.accessor.getter(action);
 	break;
       default:
 	action.log.out('Ignored: ' + action.toString());

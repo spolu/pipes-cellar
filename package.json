@@ -1,7 +1,7 @@
 {
   "name": "cellar",
   "description": "Alaryo Cellar Storage Management Binary",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": "Stanislas Polu <stan@alaryo.com>",
   "keywords": ["alaryo", "storage", "binary"],
   "dependencies": {"fwk": ">= 0.1.0",

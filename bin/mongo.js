@@ -29,13 +29,17 @@ var mongo = function(spec, my) {
   my.collection = {};
   
   my.lock = fwk.lock({});
+
+  my.ctx = fwk.context({config: my.cfg});
+  my.ctx.setTint('mongo-' + process.pid);
   
   my.db = new mongodb.Db(my.dbname,
 			 new mongodb.Server(my.host,
 					    my.port, {}),
 			 { native_parser:true });  
   my.connected = false;
-  console.log('opening db: ' + my.host + ':' + my.port + '/' + my.dbname);
+
+  my.ctx.log.debug('Opening db: ' + my.host + ':' + my.port + '/' + my.dbname);
   
   /** 
    * Events emitted:
@@ -61,6 +65,7 @@ var mongo = function(spec, my) {
 	      function(err, c) { 
 		if(err) { unlock(); action.error(err); return; }
 		var col = collection({ collection: c, name: name, config: my.cfg });
+		my.ctx.log.debug('Opening collection ' + name);
 		col.on('update', function(id, obj, hash) {
 			 that.emit('update', name + '.' + id, obj, hash);
 		       });
@@ -142,7 +147,7 @@ var collection = function(spec, my) {
   my.objects = {};
   
   my.ctx = fwk.context({config: my.cfg});
-  my.ctx.setTint('mongo-' + process.pid);
+  my.ctx.setTint('col:' + my.name + '-' + process.pid);
   
   var that = new events.EventEmitter();
   
@@ -156,20 +161,20 @@ var collection = function(spec, my) {
     for(var i in my.objects) {
       if(my.objects.hasOwnProperty(i) && 
 	 my.objects[i]._dirty === true) {
-	var id = i;
 	my.lock.wlock(
-	  id, 
+	  i, 
 	  function(unlock) {
 
 	    /** check still dirty */				       
-            if(!my.objects[id]._dirty) { unlock(); return; }
-	    var obj = my.objects[id].shallow();
+            if(!my.objects[i]._dirty) { unlock(); return; }
+	    var obj = my.objects[i].shallow();
             delete obj._dirty;
 	    
             my.collection.save(
 	      obj, 
 	      {upsert: true, safe: true},
-	      function(err, doc) {
+	      /** careful creating function in loops see the bind */
+	      function(id, err, doc) {
 		if(err) { unlock(); my.ctx.log.error(err); return; }			  
 		my.ctx.log.debug('INSPECT: ' + util.inspect(my.objects));
 		my.ctx.log.debug('WRITEBACK ' + target(id) + ': ' + my.objects[id]._hash);
@@ -177,7 +182,7 @@ var collection = function(spec, my) {
 		my.objects[id] = doc;
 		my.objects[id]._dirty = false;
 		unlock();	      
-	      });
+	      }.bind(null, i));
           });
       }
     }

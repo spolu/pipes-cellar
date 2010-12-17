@@ -21,7 +21,7 @@ var mutator = function(spec, my) {
   
   my.cfg = spec.config || cfg.config;
   my.pipe = spec.pipe;  
-  my.mongo = spec.mongo || mongo.mongo({ config: my.cfg });
+  my.mongo = spec.mongo;
 
   my.updaters = {};
   
@@ -29,7 +29,6 @@ var mutator = function(spec, my) {
   
   var updater, mutator;
   
-  /** cb_() */
   updater = function(action) {
     if(!action.body() ||
        !action.subject() ||
@@ -62,7 +61,7 @@ var mutator = function(spec, my) {
       return;      
     }
     if(action.targets().length !== 1) {
-      action.error(new Error('Multiple target update'));
+      action.error(new Error('Multiple target'));
       return;      
     }
     if(!my.updaters[action.subject()]) {
