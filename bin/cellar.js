@@ -40,6 +40,7 @@ var cellar = function(spec, my) {
       .action.decapsulate({ msg: msg,
 			    config: my.cfg,
 			    logger: my.logger });
+    action.push(id);
     
     /** error handling */
     action.on('error', function(err) {
@@ -59,7 +60,7 @@ var cellar = function(spec, my) {
       switch(action.type() + '-' + action.msg().type()) {
       case 'MUT-1w':  
       case 'MUT-2w':  
-	action.log.out('from:' + id + ' ' + action.toString());
+	action.log.out(action.toString());
 	my.mutator.mutator(action, function(res) {
 			     if(action.msg().type() === '2w') {
 			       var reply = fwk.message.reply(action.msg());
@@ -72,7 +73,7 @@ var cellar = function(spec, my) {
 			   });
 	break;
       case 'GET-2w':
-	action.log.out('from:' + id + ' ' + action.toString());
+	action.log.out(action.toString());
 	my.getter.getter(action, function(res) {
 			   if(action.msg().type() === '2w') {
 			     var reply = fwk.message.reply(action.msg());
@@ -85,11 +86,11 @@ var cellar = function(spec, my) {
 			 });
 	break;
       case 'UPD-1w':
-	action.log.out('from:' + id + ' ' + action.toString());
+	action.log.out(action.toString());
 	my.mutator.updater(action);
 	break;
       default:
-	action.log.out('from:' + id + ' ignored ' + action.toString());
+	action.log.out('Ignored: ' + action.toString());
 	break;
       }        
     }
