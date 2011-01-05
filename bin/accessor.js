@@ -13,14 +13,13 @@ var mongo = require("./mongo.js");
  *
  * @extends {}
  *  
- * @param spec {pipe, mongo, config}
+ * @param spec {mongo, config}
  */
 var accessor = function(spec, my) {
   my = my || {};
   var _super = {};
   
   my.cfg = spec.config || cfg.config;
-  my.pipe = spec.pipe;  
   my.mongo = spec.mongo;
 
   my.getters = {};
@@ -55,13 +54,17 @@ var accessor = function(spec, my) {
   };
 
   /** cb_(res) */  
-  accessor = function(action, cb_) {
+  accessor = function(pipe, action, cb_) {
     if(action.targets().length === 0) {
       action.error(new Error('No target defined'));
       return;      
     }
     if(action.targets().length !== 1) {
-      action.error(new Error('Multiple target'));
+      var msg = 'Multiple targets defined:';
+      for(var i = 0; i < action.targets().length; i ++) {
+	msg += ' ' + action.targets()[i];
+      }
+      action.error(new Error(msg));
       return;      
     }
     if(!my.getters[action.subject()]) {
@@ -73,7 +76,7 @@ var accessor = function(spec, my) {
       action, action.targets()[0],
       function(object) {
 	my.getters[action.subject()](
-	  { pipe: my.pipe,
+	  { pipe: pipe,
 	    action: action,
 	    target: action.targets()[0],
 	    object: object },

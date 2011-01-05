@@ -13,14 +13,13 @@ var mongo = require("./mongo.js");
  *
  * @extends {}
  *  
- * @param spec {pipe, mongo, config}
+ * @param spec {mongo, config}
  */
 var mutator = function(spec, my) {
   my = my || {};
   var _super = {};
   
   my.cfg = spec.config || cfg.config;
-  my.pipe = spec.pipe;  
   my.mongo = spec.mongo;
 
   my.updaters = {};
@@ -55,13 +54,17 @@ var mutator = function(spec, my) {
   };
   
   /** cb_(res) */
-  mutator = function(action, cb_) {
+  mutator = function(pipe, action, cb_) {
     if(action.targets().length === 0) {
       action.error(new Error('No target defined'));
       return;      
     }
     if(action.targets().length !== 1) {
-      action.error(new Error('Multiple target'));
+      var msg = 'Multiple targets defined:';
+      for(var i = 0; i < action.targets().length; i ++) {
+	msg += ' ' + action.targets()[i];
+      }
+      action.error(new Error(msg));
       return;      
     }
     if(!my.updaters[action.subject()]) {
@@ -75,7 +78,7 @@ var mutator = function(spec, my) {
 	function(object) {
 	  var hash = object._hash;
 	  my.updaters[action.subject()](
-	    { pipe: my.pipe,
+	    { pipe: pipe,
 	      action: action,
 	      target: target,
 	      object: object },

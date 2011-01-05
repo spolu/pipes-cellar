@@ -1,9 +1,12 @@
 TODOs:
 
-- add server for configuration which allow subscription / stop
-- create a little cellarctl tool
+- create a cellarctl tool
 - resiliance to mongoDB disconnect + queue?
 - push error message onto pipe whenever an action fail
 
-CHANGELOG v0.1.1:
+CHANGELOG v0.1.2:
 
+- support for multiple pipe per cellar instance
+- access to functions is done through pipe with a bootstrap node and a config registration to be added to node
+- add functions for configuration which allow subscription / stop / mutator setting / accessor setting
+- removed defaut pipe. added boostrap pipe and message a replied to the pipe who sent them! (same for getter/updater msg)
