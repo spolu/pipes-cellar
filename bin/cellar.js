@@ -61,6 +61,7 @@ var cellar = function(spec, my) {
       
       try {      
 	switch(action.type() + '-' + action.msg().type()) {
+
 	case 'MUT-1w':  
 	case 'MUT-2w':  
 	  action.log.out(action.toString());
@@ -75,6 +76,7 @@ var cellar = function(spec, my) {
 			       }
 			     });
 	  break;
+
 	case 'ACC-2w':
 	  action.log.out(action.toString());
 	  my.accessor.accessor(pipe, action, function(res) {
@@ -88,6 +90,7 @@ var cellar = function(spec, my) {
 				 }
 			       });
 	  break;
+
 	default:
 	  action.log.out('ignored: ' + action.toString());
 	  break;
@@ -106,40 +109,54 @@ var cellar = function(spec, my) {
     
     /** error handling */
     ctx.on('error', function(err) {
+	     if(msg().type() === '2w-c') {
+	       var reply = fwk.message.reply(msg);
+	       reply.setBody({ error: err.message });
+	       pipe.send(reply, function(err, hdr, res) {
+			   if(err)
+			     action.log.error(err);
+			 });
+	     }
+	     /** else nothing to do */
 	     /** TODO push an error mesage */		  
 	   });
     
     try {      
-      switch(msg.subject()) {
+      switch(msg.subject() + '-' + msg.type()) {
 	
-      case 'UPDATER':
+      case 'UPDATER-1w-c':
 	ctx.log.out(msg.toString());
 	updater(ctx, msg);
 	break;
-      case 'GETTER':
+      case 'GETTER-1w-c':
 	ctx.log.out(msg.toString());
 	getter(ctx, msg);
 	break;
-      case 'SUBSCRIBE':
+      case 'SUBSCRIBE-1w-c':
 	ctx.log.out(msg.toString());
 	subscribe(ctx, msg);
 	break;
-      case 'STOP':
+      case 'STOP-1w-c':
 	ctx.log.out(msg.toString());
 	stop(ctx, msg);
 	break;
-      case 'ADDNODE':
+      case 'ADDNODE-1w-c':
 	ctx.log.out(msg.toString());
 	addnode(ctx, msg);
 	break;
-      case 'DELNODE':
+      case 'DELNODE-1w-c':
 	ctx.log.out(msg.toString());
 	delnode(ctx, msg);
 	break;	  
-      case 'SHUTDOWN':
+      case 'SHUTDOWN-1w-c':
 	ctx.log.out(msg.toString());
 	shutdown(ctx, msg);
 	break;	  
+	
+      case 'LIST-2w-c':
+	ctx.log.out(msg.toString());
+	/** TODO */
+	break;
 	
       default:
 	ctx.log.out('ignored: ' + msg.toString());
@@ -188,7 +205,8 @@ var cellar = function(spec, my) {
     
     pipe.on('1w', forward(pipe));
     pipe.on('2w', forward(pipe));    
-    pipe.on('c', config);        
+    pipe.on('1w-c', config);        
+    pipe.on('2w-c', config);        
     pipe.on('disconnect', function(id) {
 	      console.log('disconnect ' + id);
 	    });
