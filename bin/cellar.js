@@ -32,13 +32,10 @@ var cellar = function(spec, my) {
 
   var that = {};
   
-  var handle, forward;
-  var addnode, delnode, subscribe, stop, shutdown;
+  var forward, config;
+  var updater, getter, addnode, delnode, subscribe, stop, shutdown;
   var bootstrap;
   
-
-  handle = function(action, pipe) {    
-  };
 
   forward = function(pipe) {
     return function(id, msg) {
@@ -91,14 +88,6 @@ var cellar = function(spec, my) {
 				 }
 			       });
 	  break;
-	case 'UPD-1w':
-	  action.log.out(action.toString());
-	  my.mutator.updater(action);
-	  break;
-	case 'GET-1w':
-	  action.log.out(action.toString());
-	  my.accessor.getter(action);
-	  break;
 	default:
 	  action.log.out('ignored: ' + action.toString());
 	  break;
@@ -109,128 +98,160 @@ var cellar = function(spec, my) {
       }    
     };
   };
+  
+  config = function(id, msg) {
+    var ctx = fwk.context({ config: my.cfg,
+			    logger: my.logger });
+    ctx.push(id);
+    
+    /** error handling */
+    ctx.on('error', function(err) {
+	     /** TODO push an error mesage */		  
+	   });
+    
+    try {      
+      switch(msg.subject()) {
+	
+      case 'UPDATER':
+	ctx.log.out(msg.toString());
+	updater(ctx, msg);
+	break;
+      case 'GETTER':
+	ctx.log.out(msg.toString());
+	getter(ctx, msg);
+	break;
+      case 'SUBSCRIBE':
+	ctx.log.out(msg.toString());
+	subscribe(ctx, msg);
+	break;
+      case 'STOP':
+	ctx.log.out(msg.toString());
+	stop(ctx, msg);
+	break;
+      case 'ADDNODE':
+	ctx.log.out(msg.toString());
+	addnode(ctx, msg);
+	break;
+      case 'DELNODE':
+	ctx.log.out(msg.toString());
+	delnode(ctx, msg);
+	break;	  
+      case 'SHUTDOWN':
+	ctx.log.out(msg.toString());
+	shutdown(ctx, msg);
+	break;	  
+	
+      default:
+	ctx.log.out('ignored: ' + msg.toString());
+	break;
+      }        
+    }
+    catch(err) {
+      ctx.error(err, true);      
+    }          
+  };    
+  
+  
+  updater = function(ctx, msg) {
+    var spec = msg.body();
 
-  addnode = function(action) {    
-    var spec = {};
-    for(var i = 0; i < action.targets().length; i ++) {
-      var targ = /^(.+):([0-9]+)$/.exec(action.targets()[i]);
-      if(targ) {
-	spec.server = targ[1];
-	spec.port = targ[2];
-      }
-      else
-	continue;
+    if(!spec || !spec.subject || !spec.updater) {
+      ctx.error(new Error('UPDATER: incomplete body'));
+      return;
+    }    
+    my.mutator.updater(ctx, spec.subject, spec.updater);    
+  };
+  
+  getter = function(ctx, msg) {
+    var spec = msg.body();
 
-      if(!spec.server || !spec.port) {
-	action.error(new Error('ADD: incomplete target: ' + action.targets()[i]));
-	return;      
-      }
+    if(!spec || !spec.subject || !spec.getter) {
+      ctx.error(new Error('GETTER: incomplete body'));
+      return;
+    }
+    my.accessor.getter(ctx, spec.subject, spec.getter);        
+  };
+  
+  addnode = function(ctx, msg) {    
+    var spec = msg.body();
+
+    if(!spec || !spec.server || !spec.port) {
+      ctx.error(new Error('ADDNODE: incomplete body'));
+      return;
+    }
+    delnode(ctx, msg);    
+    
+    my.pipe[spec.server + ':' + spec.port] = 
+      require('pipe').pipe({ server: spec.server,
+			     port: spec.port });
+    var pipe = my.pipe[spec.server + ':' + spec.port];
+    
+    pipe.on('1w', forward(pipe));
+    pipe.on('2w', forward(pipe));    
+    pipe.on('c', config);        
+    pipe.on('disconnect', function(id) {
+	      console.log('disconnect ' + id);
+	    });
+    
+    pipe.on('connect', function(id) {
+	      console.log('connect ' + id); 
+	    });
+    
+    pipe.on('error', function(err, id) {
+	      console.log('error ' + id + ':' + err.stack);
+	    });
+    
+    pipe.subscribe(my.cfg['PIPE_CONFIG_REG'], 
+		   my.cfg['PIPE_CONFIG_TAG']);      
+  };
+
+  delnode = function(ctx, msg) {
+    var spec = msg.body();
+
+    if(!spec || !spec.server || !spec.port) {
+      ctx.error(new Error('DELNODE: incomplete body'));
+      return;
+    }
       
-      delnode(action);    
-
-      my.pipe[spec.server + ':' + spec.port] = 
-	require('pipe').pipe({ server: spec.server,
-			       port: spec.port });
+    if(my.pipe.hasOwnProperty(spec.server + ':' + spec.port)) {
+      my.pipe[spec.server + ':' + spec.port].stop();
+      delete my.pipe[spec.server + ':' + spec.port];
+    }    
+  };
+  
+  subscribe = function(ctx, msg) {
+    var spec = msg.body();
+    
+    if(!spec || !spec.server || !spec.port ||
+       !spec.id || !spec.tag) {
+      ctx.error(new Error('SUBSCRIBE: incomplete body'));
+      return;
+    }
+    
+    if(!my.pipe.hasOwnProperty(spec.server + ':' + spec.port)) {
+      addnode(ctx, msg);
+    }
+    
+    var pipe = my.pipe[spec.server + ':' + spec.port];
+    pipe.subscribe(spec.id, spec.tag);
+  };
+  
+  stop = function(ctx, msg) {
+    var spec = msg.body();
+    
+    if(!spec || !spec.server || !spec.port ||
+       !spec.id) {
+      ctx.error(new Error('STOP: incomplete body'));
+      return;
+    }
+      
+    if(my.pipe.hasOwnProperty(spec.server + ':' + spec.port)) {
       var pipe = my.pipe[spec.server + ':' + spec.port];
-      
-      /** careful pipe will be modified by the loop
-       *  works here since forward return a function
-       *  that binds to pipe
-       */
-      pipe.on('1w', forward(pipe));
-      pipe.on('2w', forward(pipe));    
-      
-      pipe.on('disconnect', function(id) {
-		console.log('disconnect ' + id);
-	      });
-      
-      pipe.on('connect', function(id) {
-		console.log('connect ' + id); 
-	      });
-      
-      pipe.on('error', function(err, id) {
-		console.log('error ' + id + ':' + err.stack);
-	      });
-      
-      pipe.subscribe(my.cfg['PIPE_CONFIG_REG'], 
-		     my.cfg['PIPE_CONFIG_TAG']);      
-    }
-  };
-
-  delnode = function(action) {
-    var spec = {};
-    for(var i = 0; i < action.targets().length; i ++) {
-      var targ = /^(.+):([0-9]+)$/.exec(action.targets()[i]);
-      if(targ) {
-	spec.server = targ[1];
-	spec.port = targ[2];
-      }
-      else
-	continue;  
-
-      if(!spec.server || !spec.port) {
-	action.error(new Error('DEL: incomplete target: ' + action.targets()[i]));
-	return;      
-      }
-      
-      if(my.pipe.hasOwnProperty(spec.server + ':' + spec.port)) {
-	my.pipe[spec.server + ':' + spec.port].stop();
-	delete my.pipe[spec.server + ':' + spec.port];
-      }    
-    }
+      pipe.stop(spec.id);      
+    }  
   };
   
-  subscribe = function(action) {
-    var spec = {};
-    for(var i = 0; i < action.targets().length; i ++) {
-      var targ = /^(.+):([0-9]+):(.+):(.+)$/.exec(action.targets()[i]);
-      if(targ) {
-	spec.server = targ[1];
-	spec.port = targ[2];
-	spec.id = targ[3];
-	spec.tag = targ[4];
-      }
-      else
-	continue;  
-      
-      if(!spec.server || !spec.port || 
-	 !spec.id || !spec.tag) {
-	action.error(new Error('SUB: incomplete target: ' + action.targets()[i]));
-	return;      
-      }
-      
-      if(my.pipe.hasOwnProperty(spec.server + ':' + spec.port)) {
-	var pipe = my.pipe[spec.server + ':' + spec.port];
-	pipe.subscribe(spec.id, spec.tag);
-      }
-    }
-  };
-  
-  stop = function(action) {
-    var spec = {};
-    for(var i = 0; i < action.targets().length; i ++) {
-      var targ = /^(.+):([0-9]+):(.+)$/.exec(action.targets()[i]);
-      if(targ) {
-	spec.server = targ[1];
-	spec.port = targ[2];
-	spec.id = targ[3];
-      }
-      else
-	continue;  
-      
-      if(!spec.server || !spec.port || !spec.id) {
-	action.error(new Error('STP: incomplete target: ' + action.targets()[i]));
-	return;      
-      }
-      
-      if(my.pipe.hasOwnProperty(spec.server + ':' + spec.port)) {
-	var pipe = my.pipe[spec.server + ':' + spec.port];
-	pipe.stop(spec.id);      
-      }  
-    }
-  };
-  
-  shutdown = function(action) {
+  shutdown = function(ctx, msg) {
     for(var i in my.pipe) {
       if(my.pipe.hasOwnProperty(i)) {
 	/** we close all registration. this will shutdown cellar? */
@@ -242,19 +263,13 @@ var cellar = function(spec, my) {
   
   bootstrap = function() {    
     var msg = fwk.message({});
-    msg.setType('1w');
-    
-    var action = require('cellar')
-      .action({ type: 'ADD',
-		subject: 'bootstrap',
-		targets: [my.cfg['PIPE_BOOTSTRAP_SERVER'] + ':' + my.cfg['PIPE_BOOTSTRAP_PORT']],
-		msg: msg,
-		config: my.cfg,
-		logger: my.logger });
-    action.setTint('boot-' + my.cfg['PIPE_CONFIG_TAG']);
+    msg.setType('c')
+      .setSubject('ADDNODE')
+      .setBody({ server: my.cfg['PIPE_BOOTSTRAP_SERVER'],
+		 port: my.cfg['PIPE_BOOTSTRAP_PORT'] });
 
     /** We add the bootstrap node */
-    addnode(action);    
+    config('bootstrap', msg);
   };
   
 

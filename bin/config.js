@@ -13,6 +13,7 @@ config['MONGO_HOST'] = 'localhost';
 config['MONGO_PORT'] = 27017;
 config['MONGO_WRITEBACK_INTERVAL'] = 2000;
 
+config['TINT_NAME'] = 'cellar';
 
 /** export merged configuration */
 exports.config = config;

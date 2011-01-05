@@ -6,6 +6,7 @@ TODOs:
 
 CHANGELOG v0.1.2:
 
+- configuration interface rely on config messages
 - support for multiple pipe per cellar instance
 - access to functions is done through pipe with a bootstrap node and a config registration to be added to node
 - add functions for configuration which allow subscription / stop / mutator setting / accessor setting

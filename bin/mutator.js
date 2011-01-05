@@ -28,29 +28,27 @@ var mutator = function(spec, my) {
   
   var updater, mutator;
   
-  updater = function(action) {
-    if(!action.body() ||
-       !action.subject() ||
-       action.subject().length == 0) {
-      action.error(new Error('Missing body or subject'));
+  updater = function(ctx, subject, fun) {
+    if(!subject || subject.length == 0 || !fun) {
+      ctx.error(new Error('Missing subject or fun'));
       return;           
     }
     
-    action.log.debug('updater evaluating: ' + action.body());
-    eval("var updaterfun = " + action.body());
+    ctx.log.debug('updater evaluating: ' + fun);
+    eval("var updaterfun = " + fun);
     
     if(typeof updaterfun === 'function') {
-      my.updaters[action.subject()] = function(spec, cb_) {
+      my.updaters[subject] = function(spec, cb_) {
 	try {
 	  return updaterfun(spec, cb_);
 	} catch (err) { 
-	  action.log.error(err, true);
+	  ctx.log.error(err, true);
 	  return null;
 	}
       };
     } 
     else
-      action.error(new Error('Updater is not a function'));      
+      ctx.error(new Error('Updater is not a function'));      
   };
   
   /** cb_(res) */

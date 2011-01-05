@@ -28,29 +28,27 @@ var accessor = function(spec, my) {
   
   var getter, accessor;
   
-  getter = function(action) {
-    if(!action.body() ||
-       !action.subject() ||
-       action.subject().length == 0) {
-      action.error(new Error('Missing body or subject'));
+  getter = function(ctx, subject, fun) {
+    if(!subject || subject.length == 0 || !fun) {
+      ctx.error(new Error('Missing subject or fun'));
       return;           
     }
     
-    action.log.debug('getter evaluating: ' + action.body());
-    eval("var getterfun = " + action.body());
+    ctx.log.debug('getter evaluating: ' + fun);
+    eval("var getterfun = " + fun);
     
     if(typeof getterfun === 'function') {
-      my.getters[action.subject()] = function(spec, cb_) {
+      my.getters[subject] = function(spec, cb_) {
 	try {
 	  return getterfun(spec, cb_);
 	} catch (err) { 
-	  action.log.error(err, true);
+	  ctx.log.error(err, true);
 	  return null;
 	}
       };
     } 
     else
-      action.error(new Error('Updater is not a function'));    
+      ctx.error(new Error('Updater is not a function'));    
   };
 
   /** cb_(res) */  
