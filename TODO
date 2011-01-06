@@ -1,5 +1,6 @@
 TODOs:
 
+- add stat to getter / updater
 - create a cellarctl tool
 - resiliance to mongoDB disconnect + queue?
 - push error message onto pipe whenever an action fail

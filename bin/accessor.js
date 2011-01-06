@@ -6,10 +6,59 @@ var cfg = require("./config.js");
 var mongo = require("./mongo.js");
 
 /**
+ * A Getter object
+ * 
+ * Fetches the data accordingly to the function it was constructed with
+ *
+ * @param spec {subject, getter}
+ */
+var getter = function(spec, my) {
+  my = my || {};
+  var _super = {};   
+  
+  my.subject = spec.subject;
+
+  if(spec.getter && typeof spec.getter === 'function') {
+    my.getter = function(spec, cb_) {
+      try {
+	return spec.getter(spec, cb_);
+      } catch (err) { 
+	ctx.log.error(err, true);
+	return null;
+      }
+    };
+    my.getterdata = spec.getter.toString();
+  }
+  else
+    my.getter = function(spec, cout_) {
+      cont_();
+    };
+  
+  var get, describe;
+  
+  get = function(spec, cb_) {
+    my.getter(spec, cb_);
+  };
+  
+  describe = function() {
+    var data = { subject: my.subject,
+		 getter: my.getterdata };
+    return data;
+  };
+  
+  that.method('get', get);
+  that.method('describe', describe);
+  
+  that.getter('subject', my, 'subject');  
+
+  return that;
+};
+
+
+/**
  * The Accessor Object
  * 
- * Carries on ACC request and store the updaters sent over the network
- * with UPD actions
+ * Carries on ACC request and store the getters registered over the network
  *
  * @extends {}
  *  
@@ -26,29 +75,20 @@ var accessor = function(spec, my) {
 
   var that = {};
   
-  var getter, accessor;
+  var register, unregister, accessor, list;
   
-  getter = function(ctx, subject, fun) {
-    if(!subject || subject.length == 0 || !fun) {
-      ctx.error(new Error('Missing subject or fun'));
-      return;           
+  register = function(ctx, subject, getfun) {
+    unregister(subject);
+    my.getters[subject] = getter({ subject: subject, 
+				   getter: getfun });
+    ctx.log.out('register: ' + subject);
+  };
+  
+  unregister = function(ctx, subject) {
+    if(my.getters.hasOwnProperty(subject)) {
+      delete my.getters[subject];
+      ctx.log.out('unregister: ' + subject);
     }
-    
-    ctx.log.debug('getter evaluating: ' + fun);
-    eval("var getterfun = " + fun);
-    
-    if(typeof getterfun === 'function') {
-      my.getters[subject] = function(spec, cb_) {
-	try {
-	  return getterfun(spec, cb_);
-	} catch (err) { 
-	  ctx.log.error(err, true);
-	  return null;
-	}
-      };
-    } 
-    else
-      ctx.error(new Error('Updater is not a function'));    
   };
 
   /** cb_(res) */  
@@ -73,7 +113,7 @@ var accessor = function(spec, my) {
     my.mongo.get(
       action, action.targets()[0],
       function(object) {
-	my.getters[action.subject()](
+	my.getters[action.subject()].get(
 	  { pipe: pipe,
 	    action: action,
 	    target: action.targets()[0],
@@ -89,9 +129,21 @@ var accessor = function(spec, my) {
 	  });
       });    
   };
+  
+  list = function(subject) {
+    var data = {};
+    for(var i in my.getters) {
+      if(my.getters.hasOwnProperty(i) && (!id || id === i)) {
+	data[i] = my.getters[i].describe();
+      }	
+    }   
+    return data;
+  };
 
-  that.method('getter', getter);
+  that.method('register', register);
+  that.method('unregister', unregister);
   that.method('accessor', accessor);
+  that.method('list', list);
 
   return that;
 };

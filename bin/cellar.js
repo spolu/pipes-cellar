@@ -32,10 +32,21 @@ var cellar = function(spec, my) {
 
   var that = {};
   
-  var forward, config;
-  var updater, getter, addnode, delnode, subscribe, stop, shutdown;
+  var send, forward, config;
+  var register, unregister;
+  var addnode, delnode;
+  var subscribe, stop;
+  var shutdown, list;
   var bootstrap;
   
+  send = function(pipe, ctx, reply) {
+    pipe.send(reply, function(err, hdr, res) {
+		if(err)
+		  ctx.log.error(err);
+		/** TODO push an error message */
+	      });    
+    ctx.finalize();
+  };
 
   forward = function(pipe) {
     return function(id, msg) {
@@ -50,10 +61,7 @@ var cellar = function(spec, my) {
 		  if(action.msg().type() === '2w') {
 		    var reply = fwk.message.reply(action.msg());
 		    reply.setBody({ error: err.message });
-		    pipe.send(reply, function(err, hdr, res) {
-				if(err)
-				  action.log.error(err);
-			      });
+		    send(pipe, action, reply);
 		  }
 		  /** else nothing to do */
 		  /** TODO push an error mesage */		  
@@ -69,10 +77,7 @@ var cellar = function(spec, my) {
 			       if(action.msg().type() === '2w') {
 				 var reply = fwk.message.reply(action.msg());
 				 reply.setBody(res);
-				 pipe.send(reply, function(err, hdr, res) {
-					     if(err)
-					       action.log.error(err);
-					   });
+				 send(pipe, action, reply);
 			       }
 			     });
 	  break;
@@ -83,10 +88,7 @@ var cellar = function(spec, my) {
 				 if(action.msg().type() === '2w') {
 				   var reply = fwk.message.reply(action.msg());
 				   reply.setBody(res);
-				   pipe.send(reply, function(err, hdr, res) {
-					       if(err)
-						 action.log.error(err);
-					     });
+				   send(pipe, action, reply);
 				 }
 			       });
 	  break;
@@ -102,128 +104,173 @@ var cellar = function(spec, my) {
     };
   };
   
-  config = function(id, msg) {
-    var ctx = fwk.context({ config: my.cfg,
-			    logger: my.logger });
-    ctx.push(id);
-    
-    /** error handling */
-    ctx.on('error', function(err) {
-	     if(msg().type() === '2w-c') {
-	       var reply = fwk.message.reply(msg);
-	       reply.setBody({ error: err.message });
-	       pipe.send(reply, function(err, hdr, res) {
-			   if(err)
-			     action.log.error(err);
-			 });
-	     }
-	     /** else nothing to do */
-	     /** TODO push an error mesage */		  
-	   });
-    
-    try {      
-      switch(msg.subject() + '-' + msg.type()) {
-	
-      case 'UPDATER-1w-c':
-	ctx.log.out(msg.toString());
-	updater(ctx, msg);
-	break;
-      case 'GETTER-1w-c':
-	ctx.log.out(msg.toString());
-	getter(ctx, msg);
-	break;
-      case 'SUBSCRIBE-1w-c':
-	ctx.log.out(msg.toString());
-	subscribe(ctx, msg);
-	break;
-      case 'STOP-1w-c':
-	ctx.log.out(msg.toString());
-	stop(ctx, msg);
-	break;
-      case 'ADDNODE-1w-c':
-	ctx.log.out(msg.toString());
-	addnode(ctx, msg);
-	break;
-      case 'DELNODE-1w-c':
-	ctx.log.out(msg.toString());
-	delnode(ctx, msg);
-	break;	  
-      case 'SHUTDOWN-1w-c':
-	ctx.log.out(msg.toString());
-	shutdown(ctx, msg);
-	break;	  
-	
-      case 'LIST-2w-c':
-	ctx.log.out(msg.toString());
-	/** TODO */
-	break;
-	
-      default:
-	ctx.log.out('ignored: ' + msg.toString());
-	break;
-      }        
-    }
-    catch(err) {
-      ctx.error(err, true);      
-    }          
-  };    
+  config = function(pipe) {    
+    return function(id, msg) {
+      var ctx = fwk.context({ config: my.cfg,
+			      logger: my.logger });
+      ctx.push(id);
+      
+      /** error handling */
+      ctx.on('error', function(err) {
+	       if(msg().type() === '2w-c') {
+		 var reply = fwk.message.reply(msg);
+		 reply.setBody({ error: err.message });
+		 send(pipe, ctx, reply);
+	       }
+	       /** else nothing to do */
+	       /** TODO push an error mesage */		  
+	     });
+      
+      try {      
+	switch(msg.subject() + '-' + msg.type()) {
+	  
+	case 'REGISTER-2w-c':
+	  ctx.log.out(msg.toString());
+	  register(pipe, ctx, msg);
+	  break;
+	case 'UNREGISTER-2w-c':
+	  ctx.log.out(msg.toString());
+	  unregister(pipe, ctx, msg);
+	  break;
+
+	case 'ADDNODE-2w-c':
+	  ctx.log.out(msg.toString());
+	  addnode(pipe, ctx, msg);
+	  break;
+	case 'DELNODE-2w-c':
+	  ctx.log.out(msg.toString());
+	  delnode(pipe, ctx, msg);
+	  break;	  
+
+	case 'SUBSCRIBE-2w-c':
+	  ctx.log.out(msg.toString());
+	  subscribe(pipe, ctx, msg);
+	  break;
+	case 'STOP-2w-c':
+	  ctx.log.out(msg.toString());
+	  stop(pipe, ctx, msg);
+	  break;
+	  
+	case 'LIST-2w-c':
+	  ctx.log.out(msg.toString());
+	  list(pipe, ctx, msg);
+	  break;
+
+	case 'SHUTDOWN-1w-c':
+	  ctx.log.out(msg.toString());
+	  shutdown(ctx, msg);
+	  break;	  
+	  
+	default:
+	  ctx.log.out('ignored: ' + msg.toString());
+	  break;
+	}        
+      }
+      catch(err) {
+	ctx.error(err, true);      
+      }          
+    };    
+  };
+
   
-  
-  updater = function(ctx, msg) {
+  register = function(pipe, ctx, msg) {
     var spec = msg.body();
 
-    if(!spec || !spec.subject || !spec.updater) {
-      ctx.error(new Error('UPDATER: incomplete body'));
+    if(!spec || !spec.subject || !spec.fun || !spec.kind) {
+      ctx.error(new Error('REGISTER: incomplete body'));
       return;
     }    
-    my.mutator.updater(ctx, spec.subject, spec.updater);    
+    
+    ctx.log.debug('updater evaluating: ' + spec.fun);
+    eval("var fun = " + spec.fun);
+    
+    if(typeof fun === 'function') {
+      switch(spec.kind) {
+      case 'updater':
+	my.mutator.register(ctx, spec.subject, fun);    
+	break;
+      case 'getter':
+	my.accessor.register(ctx, spec.subject, fun);        
+	break;
+      default:
+	ctx.error(new Error('Unknown kind: ' + kind));      
+	return;	
+      }
+    }
+    else
+      ctx.error(new Error('Function eval error'));      
+    
+    var reply = fwk.message.reply(msg);
+    reply.setBody({ status: 'OK' });
+    send(pipe, ctx, reply);
   };
   
-  getter = function(ctx, msg) {
+  unregister = function(pipe, ctx, msg) {
     var spec = msg.body();
 
-    if(!spec || !spec.subject || !spec.getter) {
-      ctx.error(new Error('GETTER: incomplete body'));
+    if(!spec || !spec.subject || !spec.kind) {
+      ctx.error(new Error('UNREGISTER: incomplete body'));
       return;
     }
-    my.accessor.getter(ctx, spec.subject, spec.getter);        
+    
+    switch(spec.kind) {
+    case 'updater':
+      my.mutator.unregister(ctx, spec.subject);    
+      break;
+    case 'getter':
+      my.accessor.unregister(ctx, spec.subject);        
+      break;
+    default:
+      ctx.error(new Error('Unknown kind: ' + kind));      
+      return;	
+    }    
+    
+    var reply = fwk.message.reply(msg);
+    reply.setBody({ status: 'OK' });
+    send(pipe, ctx, reply);
   };
   
-  addnode = function(ctx, msg) {    
+  addnode = function(pipe, ctx, msg) {    
     var spec = msg.body();
 
     if(!spec || !spec.server || !spec.port) {
       ctx.error(new Error('ADDNODE: incomplete body'));
       return;
     }
-    delnode(ctx, msg);    
+    delnode(pipe, ctx, msg);    
     
     my.pipe[spec.server + ':' + spec.port] = 
       require('pipe').pipe({ server: spec.server,
 			     port: spec.port });
-    var pipe = my.pipe[spec.server + ':' + spec.port];
+    var p = my.pipe[spec.server + ':' + spec.port];
     
-    pipe.on('1w', forward(pipe));
-    pipe.on('2w', forward(pipe));    
-    pipe.on('1w-c', config);        
-    pipe.on('2w-c', config);        
-    pipe.on('disconnect', function(id) {
-	      console.log('disconnect ' + id);
-	    });
+    p.on('1w', forward(p));
+    p.on('2w', forward(p));    
+    p.on('1w-c', config(p));        
+    p.on('2w-c', config(p));        
+    p.on('disconnect', function(id) {
+	   console.log('disconnect ' + id);
+	 });
     
-    pipe.on('connect', function(id) {
-	      console.log('connect ' + id); 
-	    });
+    p.on('connect', function(id) {
+	   console.log('connect ' + id); 
+	 });
     
-    pipe.on('error', function(err, id) {
-	      console.log('error ' + id + ':' + err.stack);
-	    });
+    p.on('error', function(err, id) {
+	   console.log('error ' + id + ':' + err.stack);
+	 });
     
-    pipe.subscribe(my.cfg['PIPE_CONFIG_REG'], 
-		   my.cfg['PIPE_CONFIG_TAG']);      
+    p.subscribe(my.cfg['PIPE_CONFIG_REG'], 
+		my.cfg['PIPE_CONFIG_TAG']);      
+
+    if(pipe) {
+      var reply = fwk.message.reply(msg);
+      reply.setBody({ status: 'OK' });
+      send(pipe, ctx, reply);      
+    }
   };
 
-  delnode = function(ctx, msg) {
+  delnode = function(pipe, ctx, msg) {
     var spec = msg.body();
 
     if(!spec || !spec.server || !spec.port) {
@@ -235,9 +282,16 @@ var cellar = function(spec, my) {
       my.pipe[spec.server + ':' + spec.port].stop();
       delete my.pipe[spec.server + ':' + spec.port];
     }    
+
+    if(pipe) {
+      console.log('REPLYING! A');
+      var reply = fwk.message.reply(msg);
+      reply.setBody({ status: 'OK' });
+      send(pipe, ctx, reply);
+    }
   };
   
-  subscribe = function(ctx, msg) {
+  subscribe = function(pipe, ctx, msg) {
     var spec = msg.body();
     
     if(!spec || !spec.server || !spec.port ||
@@ -247,14 +301,18 @@ var cellar = function(spec, my) {
     }
     
     if(!my.pipe.hasOwnProperty(spec.server + ':' + spec.port)) {
-      addnode(ctx, msg);
+      addnode(null, ctx, msg);
     }
     
-    var pipe = my.pipe[spec.server + ':' + spec.port];
-    pipe.subscribe(spec.id, spec.tag);
+    var p = my.pipe[spec.server + ':' + spec.port];
+    p.subscribe(spec.id, spec.tag);
+
+    var reply = fwk.message.reply(msg);
+    reply.setBody({ status: 'OK' });
+    send(pipe, ctx, reply);
   };
   
-  stop = function(ctx, msg) {
+  stop = function(pipe, ctx, msg) {
     var spec = msg.body();
     
     if(!spec || !spec.server || !spec.port ||
@@ -267,6 +325,10 @@ var cellar = function(spec, my) {
       var pipe = my.pipe[spec.server + ':' + spec.port];
       pipe.stop(spec.id);      
     }  
+
+    var reply = fwk.message.reply(msg);
+    reply.setBody({ status: 'OK' });
+    send(pipe, ctx, reply);
   };
   
   shutdown = function(ctx, msg) {
@@ -279,15 +341,29 @@ var cellar = function(spec, my) {
   };
   
   
+  /** list mutator, accessor, node */
+  list = function(pipe, ctx, msg) {
+    var spec = msg.body();
+    
+    if(!spec || !spec.kind) {
+      ctx.error(new Error('LIST: incomplete body'));
+      return;
+    }
+    
+  };
+  
   bootstrap = function() {    
     var msg = fwk.message({});
-    msg.setType('c')
+    msg.setType('2w-c')
       .setSubject('ADDNODE')
       .setBody({ server: my.cfg['PIPE_BOOTSTRAP_SERVER'],
 		 port: my.cfg['PIPE_BOOTSTRAP_PORT'] });
-
+    
     /** We add the bootstrap node */
-    config('bootstrap', msg);
+    var ctx = fwk.context({ config: my.cfg,
+			    logger: my.logger });
+    ctx.push('bootstrap');
+    addnode(null, ctx, msg);
   };
   
 
