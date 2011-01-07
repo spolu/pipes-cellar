@@ -9,12 +9,14 @@ var target = process.argv[3] || '';
 var body = process.argv[4] || 'BODY';
 
 
-var action = cellar.action({ type:'ACC',
+var action = cellar.action({ config: { 'TINT_NAME' : 'test' },
+			     type:'ACC',
 			     subject: subject,
 			     targets: target,
 			     body: body });
 
 var msg = cellar.action.encapsulate(action, '2w');
+
 
 pipe.send(msg, function(err, hdr, res) {
 	    if(err)

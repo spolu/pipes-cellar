@@ -9,7 +9,8 @@ var target = process.argv[3] || '';
 var body = process.argv[4] || 'BODY';
 
 
-var action = cellar.action({ type:'MUT',
+var action = cellar.action({ config: { 'TINT_NAME' : 'test' },
+			     type:'MUT',
 			     subject: subject,
 			     targets: target,
 			     body: body });

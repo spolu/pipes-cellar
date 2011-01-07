@@ -1,13 +1,14 @@
 TODOs:
 
 - add stat to getter / updater
-- create a cellarctl tool
+- complete shutdown with closing mongo db connection (currently does not shutdown)
 - resiliance to mongoDB disconnect + queue?
 - push error message onto pipe whenever an action fail
 
 CHANGELOG v0.1.2:
 
-- configuration interface rely on config messages 1w-c, 2w-c
+- create a cellarctl tool
+- configuration interface rely on config messages 'c'
 - support for multiple pipe per cellar instance
 - access to functions is done through pipe with a bootstrap node and a config registration to be added to node
 - add functions for configuration which allow subscription / stop / mutator setting / accessor setting

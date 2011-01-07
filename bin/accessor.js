@@ -10,30 +10,33 @@ var mongo = require("./mongo.js");
  * 
  * Fetches the data accordingly to the function it was constructed with
  *
- * @param spec {subject, getter}
+ * @param spec {ctx, subject, getfun}
  */
 var getter = function(spec, my) {
   my = my || {};
   var _super = {};   
   
   my.subject = spec.subject;
+  my.ctx = spec.ctx;  
 
-  if(spec.getter && typeof spec.getter === 'function') {
-    my.getter = function(spec, cb_) {
+  if(spec.getfun && typeof spec.getfun === 'function') {
+    my.getter = function(sp, cb_) {
       try {
-	return spec.getter(spec, cb_);
+	return spec.getfun(sp, cb_);
       } catch (err) { 
-	ctx.log.error(err, true);
+	my.ctx.log.error(err, true);
 	return null;
       }
     };
-    my.getterdata = spec.getter.toString();
+    my.getterdata = spec.getfun.toString();
   }
   else
-    my.getter = function(spec, cout_) {
+    my.getter = function(spec, cont_) {
       cont_();
     };
   
+  var that = {};
+
   var get, describe;
   
   get = function(spec, cb_) {
@@ -79,8 +82,9 @@ var accessor = function(spec, my) {
   
   register = function(ctx, subject, getfun) {
     unregister(subject);
-    my.getters[subject] = getter({ subject: subject, 
-				   getter: getfun });
+    my.getters[subject] = getter({ ctx: ctx,
+				   subject: subject, 
+				   getfun: getfun});
     ctx.log.out('register: ' + subject);
   };
   

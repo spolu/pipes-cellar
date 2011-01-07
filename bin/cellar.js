@@ -112,7 +112,7 @@ var cellar = function(spec, my) {
       
       /** error handling */
       ctx.on('error', function(err) {
-	       if(msg().type() === '2w-c') {
+	       if(msg.type() === 'c') {
 		 var reply = fwk.message.reply(msg);
 		 reply.setBody({ error: err.message });
 		 send(pipe, ctx, reply);
@@ -124,41 +124,41 @@ var cellar = function(spec, my) {
       try {      
 	switch(msg.subject() + '-' + msg.type()) {
 	  
-	case 'REGISTER-2w-c':
+	case 'REGISTER-c':
 	  ctx.log.out(msg.toString());
 	  register(pipe, ctx, msg);
 	  break;
-	case 'UNREGISTER-2w-c':
+	case 'UNREGISTER-c':
 	  ctx.log.out(msg.toString());
 	  unregister(pipe, ctx, msg);
 	  break;
 
-	case 'ADDNODE-2w-c':
+	case 'ADDNODE-c':
 	  ctx.log.out(msg.toString());
 	  addnode(pipe, ctx, msg);
 	  break;
-	case 'DELNODE-2w-c':
+	case 'DELNODE-c':
 	  ctx.log.out(msg.toString());
 	  delnode(pipe, ctx, msg);
 	  break;	  
 
-	case 'SUBSCRIBE-2w-c':
+	case 'SUBSCRIBE-c':
 	  ctx.log.out(msg.toString());
 	  subscribe(pipe, ctx, msg);
 	  break;
-	case 'STOP-2w-c':
+	case 'STOP-c':
 	  ctx.log.out(msg.toString());
 	  stop(pipe, ctx, msg);
 	  break;
 	  
-	case 'LIST-2w-c':
+	case 'LIST-c':
 	  ctx.log.out(msg.toString());
 	  list(pipe, ctx, msg);
 	  break;
 
-	case 'SHUTDOWN-1w-c':
+	case 'SHUTDOWN-c':
 	  ctx.log.out(msg.toString());
-	  shutdown(ctx, msg);
+	  shutdown(pipe, ctx, msg);
 	  break;	  
 	  
 	default:
@@ -193,12 +193,14 @@ var cellar = function(spec, my) {
 	my.accessor.register(ctx, spec.subject, fun);        
 	break;
       default:
-	ctx.error(new Error('Unknown kind: ' + kind));      
+	ctx.error(new Error('Unknown kind: ' + spec.kind));      
 	return;	
       }
     }
-    else
+    else {
       ctx.error(new Error('Function eval error'));      
+      return;      
+    }
     
     var reply = fwk.message.reply(msg);
     reply.setBody({ status: 'OK' });
@@ -237,8 +239,10 @@ var cellar = function(spec, my) {
       ctx.error(new Error('ADDNODE: incomplete body'));
       return;
     }
-    delnode(pipe, ctx, msg);    
-    
+    delnode(null, ctx, msg);    
+
+    ctx.log.out('adding node: ' + spec.server + ':' + spec.port);
+
     my.pipe[spec.server + ':' + spec.port] = 
       require('pipe').pipe({ server: spec.server,
 			     port: spec.port });
@@ -246,8 +250,7 @@ var cellar = function(spec, my) {
     
     p.on('1w', forward(p));
     p.on('2w', forward(p));    
-    p.on('1w-c', config(p));        
-    p.on('2w-c', config(p));        
+    p.on('c', config(p));        
     p.on('disconnect', function(id) {
 	   console.log('disconnect ' + id);
 	 });
@@ -284,7 +287,6 @@ var cellar = function(spec, my) {
     }    
 
     if(pipe) {
-      console.log('REPLYING! A');
       var reply = fwk.message.reply(msg);
       reply.setBody({ status: 'OK' });
       send(pipe, ctx, reply);
@@ -294,8 +296,8 @@ var cellar = function(spec, my) {
   subscribe = function(pipe, ctx, msg) {
     var spec = msg.body();
     
-    if(!spec || !spec.server || !spec.port ||
-       !spec.id || !spec.tag) {
+    /** spec.tag optional */
+    if(!spec || !spec.server || !spec.port || !spec.id) {
       ctx.error(new Error('SUBSCRIBE: incomplete body'));
       return;
     }
@@ -315,8 +317,7 @@ var cellar = function(spec, my) {
   stop = function(pipe, ctx, msg) {
     var spec = msg.body();
     
-    if(!spec || !spec.server || !spec.port ||
-       !spec.id) {
+    if(!spec || !spec.server || !spec.port || !spec.id) {
       ctx.error(new Error('STOP: incomplete body'));
       return;
     }
@@ -331,7 +332,11 @@ var cellar = function(spec, my) {
     send(pipe, ctx, reply);
   };
   
-  shutdown = function(ctx, msg) {
+  shutdown = function(pipe, ctx, msg) {
+    var reply = fwk.message.reply(msg);
+    reply.setBody({ status: 'OK' });
+    send(pipe, ctx, reply);
+
     for(var i in my.pipe) {
       if(my.pipe.hasOwnProperty(i)) {
 	/** we close all registration. this will shutdown cellar? */
@@ -341,7 +346,7 @@ var cellar = function(spec, my) {
   };
   
   
-  /** list mutator, accessor, node */
+  /** list mut, acc, node */
   list = function(pipe, ctx, msg) {
     var spec = msg.body();
     
@@ -350,11 +355,14 @@ var cellar = function(spec, my) {
       return;
     }
     
+    var reply = fwk.message.reply(msg);
+    reply.setBody({ status: 'OK' });
+    send(pipe, ctx, reply);    
   };
   
   bootstrap = function() {    
     var msg = fwk.message({});
-    msg.setType('2w-c')
+    msg.setType('c')
       .setSubject('ADDNODE')
       .setBody({ server: my.cfg['PIPE_BOOTSTRAP_SERVER'],
 		 port: my.cfg['PIPE_BOOTSTRAP_PORT'] });

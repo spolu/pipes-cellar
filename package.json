@@ -7,6 +7,6 @@
   "dependencies": {"fwk": ">= 0.1.2",
 		   "pipe": ">= 0.1.2" },
   "main" : "./lib/cellar",
-  "bin" : "./bin/cellar",
+  "bin" : { "cellar" : "./bin/cellar", "cellarctl" : "./bin/cellarctl" }, 
   "engines": { "node": ">= 0.3.1" }
 }

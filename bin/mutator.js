@@ -10,30 +10,33 @@ var mongo = require("./mongo.js");
  * 
  * Applies the update using the function it is constructed with
  * 
- * @param spec {subject, updater}
+ * @param spec {ctx, subject, updfun}
  */
 var updater = function(spec, my) {
   my = my || {};
   var _super = {};   
   
+  my.ctx = spec.ctx;
   my.subject = spec.subject;
-
-  if(spec.updater && typeof spec.updater === 'function') {
-    my.updater = function(spec, cb_) {
+  
+  if(spec.updfun && typeof spec.updfun === 'function') {
+    my.updater = function(sp, cb_) {
       try {
-	return spec.updater(spec, cb_);
+	return spec.updfun(sp, cb_);
       } catch (err) { 
-	ctx.log.error(err, true);
+	my.ctx.log.error(err, true);
 	return null;
       }
     };
-    my.updaterdata = spec.updater.toString();
+    my.updaterdata = spec.updfun.toString();
   }
   else
     my.updater = function(spec, cout_) {
       cont_();
     };
   
+  var that = {};
+
   var update, describe;
   
   update = function(spec, cb_) {
@@ -80,8 +83,9 @@ var mutator = function(spec, my) {
   
   register = function(ctx, subject, updfun) {
     unregister(subject);
-    my.updaters[subject] = updater({ subject: subject,
-				     updater: updfun });
+    my.updaters[subject] = updater({ ctx: ctx,
+				     subject: subject,
+				     updfun: updfun });
   };
   
   unregister = function(ctx, subject) {
