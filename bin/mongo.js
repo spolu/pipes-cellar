@@ -70,11 +70,11 @@ var mongo = function(spec, my) {
 			 that.emit('update', name + '.' + id, obj, hash);
 		       });
 		my.collection[name] = col;
-		unlock(); cb_(col);
+		unlock(); cb_(col);		
 	      });		 
 	  }
 	};
-
+	
 	if(!my.connected) {	  
 	  my.db.open(function(err, db) {
 		       if(err) { unlock(); action.error(err, true); return; }
@@ -82,8 +82,9 @@ var mongo = function(spec, my) {
 		       openfun();
 		     });      
 	}
-	else
+	else {
 	  openfun();
+	}
       });    
   };
   

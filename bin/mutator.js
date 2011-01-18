@@ -118,6 +118,7 @@ var mutator = function(spec, my) {
       my.mongo.get(
 	action, target,
 	function(object) {
+	  action.log.debug('CBGET: ' + object._cid);
 	  var hash = object._hash;
 	  my.updaters[action.subject()].update(
 	    { pipe: pipe,
@@ -131,7 +132,10 @@ var mutator = function(spec, my) {
 		  action, target, hash, update.object,
 		  function(status) {
 		    if(status === 'RETRY') loopfun(target);
-		    else cb_(update.result);
+		    else {
+		      action.log.debug('CBSET: ' + object._cid);
+		      cb_(update.result);
+		    }
 		  });
 	      }
 	      else {
