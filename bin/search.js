@@ -50,3 +50,5 @@ var search = function(spec, my) {
   };
 
 };
+
+exports.search = search;

@@ -29,8 +29,8 @@ var cellar = function(spec, my) {
 						 config: my.cfg });  
   my.accessor = require('./accessor.js').accessor({ mongo: my.mongo,
 						    config: my.cfg });
-  my.search = require('./search.js').accessor({ mongo: my.mongo,
-						config: my.cfg });
+  my.search = require('./search.js').search({ mongo: my.mongo,
+					      config: my.cfg });
 
   var that = {};
   
