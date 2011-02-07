@@ -48,7 +48,10 @@ var search = function(spec, my) {
 	cb_(result);
       });
   };
-
+  
+  that.method('search', search);
+  
+  return that;
 };
 
 exports.search = search;
