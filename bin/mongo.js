@@ -182,8 +182,9 @@ var collection = function(spec, my) {
 	    /** check still dirty */				       
             if(!my.objects[i]._dirty) { unlock(); return; }
 	    var obj = my.objects[i].shallow();
-            delete obj._dirty;
-	    
+            delete obj._dirty;	    
+	    my.ctx.log.debug('CALL WITH: ' + util.inspect(obj));
+
             my.collection.save(
 	      obj, 
 	      {upsert: true, safe: true},
