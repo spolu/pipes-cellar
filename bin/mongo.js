@@ -183,7 +183,7 @@ var collection = function(spec, my) {
             if(!my.objects[i]._dirty) { unlock(); return; }
 	    var obj = my.objects[i].shallow();
             delete obj._dirty;	    
-	    my.ctx.log.debug('CALL WITH: ' + util.inspect(obj));
+	    //my.ctx.log.debug('SAVE: ' + util.inspect(obj));
 
             my.collection.save(
 	      obj, 
@@ -191,8 +191,8 @@ var collection = function(spec, my) {
 	      /** careful creating function in loops see the bind */
 	      function(id, err, doc) {
 		if(err) { unlock(); my.ctx.log.error(err.stack); return; }			  
-		my.ctx.log.debug('INSPECT: ' + util.inspect(my.objects));
-		my.ctx.log.debug('WRITEBACK ' + target(id) + ': ' + my.objects[id]._hash);
+		//my.ctx.log.debug('INSPECT: ' + util.inspect(my.objects));
+		//my.ctx.log.debug('WRITEBACK ' + target(id) + ': ' + my.objects[id]._hash);
 		/** so that we catch-up mongoDb _id */
 		my.objects[id] = doc;
 		my.objects[id]._dirty = false;
