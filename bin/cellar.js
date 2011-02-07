@@ -29,6 +29,8 @@ var cellar = function(spec, my) {
 						 config: my.cfg });  
   my.accessor = require('./accessor.js').accessor({ mongo: my.mongo,
 						    config: my.cfg });
+  my.search = require('./search.js').accessor({ mongo: my.mongo,
+						config: my.cfg });
 
   var that = {};
   
@@ -91,6 +93,17 @@ var cellar = function(spec, my) {
 				   send(pipe, action, reply);
 				 }
 			       });
+	  break;
+	  
+	case 'SRH-2w':	  
+	  action.log.out(action.toString());
+	  my.search.search(pipe, action, function(res) {
+			     if(action.msg().type() === '2w') {
+			       var reply = fwk.message.reply(action.msg());
+			       reply.setBody(res);
+			       send(pipe, action, reply);
+			     }			     
+			   });
 	  break;
 
 	default:

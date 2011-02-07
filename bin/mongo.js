@@ -47,7 +47,7 @@ var mongo = function(spec, my) {
    */
   var that = new events.EventEmitter();
   
-  var open, get, set;
+  var open, get, set, find;
   
   /** cb_(collection) */
   open = function(action, name, cb_) {        
@@ -113,8 +113,21 @@ var mongo = function(spec, my) {
       action.error(new Error('Invalid target: ' + target));
   };
   
+  /** cb_(result) */
+  find = function(action, target, selector, cb_) {
+    var targ = cellar.target.match(target);
+    if(targ) {
+      open(action, targ[1], function(c) {
+	     c.find(action, selector, cb_);
+	   });
+    }
+    else
+      action.error(new Error('Invalid target: ' + target));         
+  };
+
   that.method('get', get);
   that.method('set', set);
+  that.method('find', find);
 
   return that;
 };
@@ -152,7 +165,7 @@ var collection = function(spec, my) {
   
   var that = new events.EventEmitter();
   
-  var target, writeback, remoteget, get, set;    
+  var target, writeback, remoteget, get, set, find;    
 
   target = function (id) {
     return cellar.target.build(my.name, id);
@@ -282,12 +295,26 @@ var collection = function(spec, my) {
       cb_(mongo.status.noop);
   };  
 
+  /** cb_(result) */
+  find = function(action, selector, cb_) {
+    my.collection.find(
+      selector, 
+      function(err, cursor) {
+	if(err) { action.error(err); return; }
+	cursor.toArray(
+	  function(err, objs) {
+	    if(err) { action.error(err); return; }
+	    cb_(objs);	    
+	  });
+      });	    
+  };
   
   my.timer = setInterval(writeback, my.interval);
 
   
   that.method('get', get);
   that.method('set', set);
+  that.method('find', find);
 
   return that;
 };

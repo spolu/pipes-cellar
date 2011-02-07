@@ -1,5 +1,6 @@
 TODOs:
 
+- finish cellarctl with list functions
 - add stat to getter / updater
 - complete shutdown with closing mongo db connection (currently does not shutdown)
 - resiliance to mongoDB disconnect + queue?
@@ -7,7 +8,8 @@ TODOs:
 
 CHANGELOG v0.1.2:
 
-- debug lock fwk when concurrent action are received
+- added SRH search action
+- bug-000001: debug lock fwk when concurrent action are received
 - create a cellarctl tool
 - configuration interface rely on config messages 'c'
 - support for multiple pipe per cellar instance
