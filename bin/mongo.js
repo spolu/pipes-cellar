@@ -189,7 +189,7 @@ var collection = function(spec, my) {
 	      {upsert: true, safe: true},
 	      /** careful creating function in loops see the bind */
 	      function(id, err, doc) {
-		if(err) { unlock(); my.ctx.log.error(err); return; }			  
+		if(err) { unlock(); my.ctx.log.error(err + ' ' + err.stack()); return; }			  
 		my.ctx.log.debug('INSPECT: ' + util.inspect(my.objects));
 		my.ctx.log.debug('WRITEBACK ' + target(id) + ': ' + my.objects[id]._hash);
 		/** so that we catch-up mongoDb _id */
