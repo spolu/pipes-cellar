@@ -277,7 +277,7 @@ var cellar = function(spec, my) {
 	 });
     
     p.subscribe(my.cfg['PIPE_CONFIG_REG'], 
-		my.cfg['PIPE_CONFIG_TAG']);      
+		my.cfg['PIPE_CONFIG_TAG']);
 
     if(pipe) {
       var reply = fwk.message.reply(msg);
