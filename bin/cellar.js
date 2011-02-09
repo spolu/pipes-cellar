@@ -106,7 +106,7 @@ var cellar = function(spec, my) {
 	  break;
 
 	default:
-	  throw new Error('ignored: ' + action.toString());
+	  action.error(new Error('ignored: ' + action.toString()));
 	  break;
 	}        
       }

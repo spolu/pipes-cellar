@@ -8,6 +8,7 @@ TODOs:
 
 CHANGELOG v0.1.2:
 
+- moved mongo out as a separate library
 - added SRH search action
 - bug-000001: debug lock fwk when concurrent action are received
 - create a cellarctl tool
