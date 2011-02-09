@@ -1,8 +1,8 @@
 var util = require('util');
 var fwk = require('fwk');
+var mongo = require('mongo');
 
 var cfg = require("./config.js");
-var mongo = require("./mongo.js");
 
 /**
  * The Cellar Object
@@ -21,9 +21,8 @@ var cellar = function(spec, my) {
   
   my.port = spec.port || my.cfg['CELLAR_PORT'];
     
-  /** Defaults will be overridden by configuration */
   my.pipe = {};
-  my.mongo = mongo.mongo({ config: my.cfg });
+  my.mongo = mongo.mongo({ dbname: 'cellar' });
 
   my.mutator = require('./mutator.js').mutator({ mongo: my.mongo,
 						 config: my.cfg });  
@@ -107,7 +106,7 @@ var cellar = function(spec, my) {
 	  break;
 
 	default:
-	  action.log.out('ignored: ' + action.toString());
+	  throw new Error('ignored: ' + action.toString());
 	  break;
 	}        
       }
@@ -256,6 +255,7 @@ var cellar = function(spec, my) {
 
     ctx.log.out('adding node: ' + spec.server + ':' + spec.port);
 
+    /** Defaults will be overridden by configuration */
     my.pipe[spec.server + ':' + spec.port] = 
       require('pipe').pipe({ server: spec.server,
 			     port: spec.port });

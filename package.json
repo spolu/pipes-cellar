@@ -3,10 +3,10 @@
   "description": "Cellar Storage Management Binary",
   "version": "0.1.2",
   "author": "Stanislas Polu <stan@bipsly.com>",
-  "keywords": ["storage", "binary"],
+  "keywords": ["storage", "pipe", "mongo"],
   "dependencies": {"fwk": ">= 0.1.2",
 		   "pipe": ">= 0.1.2" },
   "main" : "./lib/cellar",
   "bin" : { "cellar" : "./bin/cellar", "cellarctl" : "./bin/cellarctl" }, 
-  "engines": { "node": ">= 0.3.1" }
+  "engines": { "node": ">= 0.3.8" }
 }
