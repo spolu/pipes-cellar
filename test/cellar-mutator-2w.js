@@ -12,7 +12,7 @@ var body = process.argv[4] || 'BODY';
 var action = cellar.action({ config: { 'TINT_NAME' : 'test' },
 			     type:'MUT',
 			     subject: subject,
-			     targets: target,
+			     targets: [target],
 			     body: body });
 
 var msg = cellar.action.encapsulate(action, '2w');
