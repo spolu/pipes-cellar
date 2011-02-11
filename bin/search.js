@@ -1,9 +1,9 @@
 var util = require('util');
 var fwk = require('fwk');
 var cellar = require('cellar');
+var mongo = require('mongo');
 
 var cfg = require("./config.js");
-var mongo = require("./mongo.js");
 
 /**
  * The Search Object
