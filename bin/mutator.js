@@ -86,6 +86,7 @@ var mutator = function(spec, my) {
     my.updaters[subject] = updater({ ctx: ctx,
 				     subject: subject,
 				     updfun: updfun });
+    ctx.log.out('register: ' + subject);
   };
   
   unregister = function(ctx, subject) {

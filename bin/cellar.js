@@ -265,15 +265,15 @@ var cellar = function(spec, my) {
     p.on('2w', forward(p));    
     p.on('c', config(p));        
     p.on('disconnect', function(id) {
-	   console.log('disconnect ' + id);
+	   ctx.log.debug('disconnect ' + id);
 	 });
     
     p.on('connect', function(id) {
-	   console.log('connect ' + id); 
+	   ctx.log.debug('connect ' + id);
 	 });
     
     p.on('error', function(err, id) {
-	   console.log('error ' + id + ':' + err.stack);
+	   ctx.log.error(err);
 	 });
     
     p.subscribe(my.cfg['PIPE_CONFIG_REG'], 

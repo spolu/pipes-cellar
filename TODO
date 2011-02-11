@@ -6,11 +6,16 @@ TODOs:
 - resiliance to mongoDB disconnect + queue?
 - push error message onto pipe whenever an action fail
 
-CHANGELOG v0.1.2:
+NEXT CHANGELOG:
+
+CHANGELOG v0.1.4:
 
 - moved mongo out as a separate library
 - added SRH search action
 - bug-000001: debug lock fwk when concurrent action are received
+
+CHANGELOG v0.1.2:
+
 - create a cellarctl tool
 - configuration interface rely on config messages 'c'
 - support for multiple pipe per cellar instance

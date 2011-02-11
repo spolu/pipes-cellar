@@ -117,6 +117,7 @@ var accessor = function(spec, my) {
     my.mongo.get(
       action, action.targets()[0],
       function(object) {
+	action.log.debug('CBGET: ' + object._cid);
 	my.getters[action.subject()].get(
 	  { pipe: pipe,
 	    action: action,
