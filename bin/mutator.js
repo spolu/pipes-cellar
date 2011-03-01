@@ -135,7 +135,7 @@ var mutator = function(spec, my) {
 		    if(status === 'RETRY') loopfun(target);
 		    else {
 		      action.log.debug('CBSET: ' + object._cid);
-		      cb_(update.result);
+		      cb_(update.result, update.headers);
 		    }
 		  });
 	      }

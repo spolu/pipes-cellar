@@ -1,3 +1,5 @@
+#!/usr/local/bin/node
+
 var util = require('util');
 var fwk = require('fwk');
 var mongo = require('mongo');
@@ -74,9 +76,10 @@ var cellar = function(spec, my) {
 	case 'MUT-1w':  
 	case 'MUT-2w':  
 	  action.log.out(action.toString());
-	  my.mutator.mutator(pipe, action, function(res) {
+	  my.mutator.mutator(pipe, action, function(res, hdrs) {
 			       if(action.msg().type() === '2w') {				 
 				 var reply = fwk.message.reply(action.msg());
+				 reply.setHeaders(hdrs);
 				 reply.setBody(res);
 				 send(pipe, action, reply);
 			       }

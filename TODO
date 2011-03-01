@@ -8,6 +8,8 @@ TODOs:
 
 NEXT CHANGELOG:
 
+- added headers to mutator update
+
 CHANGELOG v0.1.4:
 
 - moved mongo out as a separate library
