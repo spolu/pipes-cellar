@@ -32,6 +32,8 @@ var cellar = function(spec, my) {
 						    config: my.cfg });
   my.search = require('./search.js').search({ mongo: my.mongo,
 					      config: my.cfg });
+  my.mapreduce = require('./mapreduce.js').mapreduce({ mongo: my.mongo,
+						       config: my.cfg });
 
   var that = {};
   
@@ -106,6 +108,17 @@ var cellar = function(spec, my) {
 			       send(pipe, action, reply);
 			     }			     
 			   });
+	  break;
+
+	case 'MPR-2w':	  
+	  action.log.out(action.toString());
+	  my.mapreduce.mapreduce(pipe, action, function(res) {
+				   if(action.msg().type() === '2w') {
+				     var reply = fwk.message.reply(action.msg());
+				     reply.setBody(res);
+				     send(pipe, action, reply);
+				   }			     
+				 });
 	  break;
 
 	default:
@@ -196,16 +209,19 @@ var cellar = function(spec, my) {
       return;
     }    
     
-    ctx.log.debug('updater evaluating: ' + spec.fun);
+    ctx.log.debug('mutator evaluating: ' + spec.fun);
     eval("var fun = " + spec.fun);
     
     if(typeof fun === 'function') {
       switch(spec.kind) {
-      case 'updater':
+      case 'mutator':
 	my.mutator.register(ctx, spec.subject, fun);    
 	break;
-      case 'getter':
+      case 'accessor':
 	my.accessor.register(ctx, spec.subject, fun);        
+	break;
+      case 'mapreduce':
+	my.mapreduce.register(ctx, spec.subject, fun);        
 	break;
       default:
 	ctx.error(new Error('Unknown kind: ' + spec.kind));      
@@ -231,11 +247,14 @@ var cellar = function(spec, my) {
     }
     
     switch(spec.kind) {
-    case 'updater':
+    case 'mutator':
       my.mutator.unregister(ctx, spec.subject);    
       break;
-    case 'getter':
+    case 'accessor':
       my.accessor.unregister(ctx, spec.subject);        
+      break;
+    case 'mapreduce':
+      my.mapreduce.unregister(ctx, spec.subject);        
       break;
     default:
       ctx.error(new Error('Unknown kind: ' + kind));      

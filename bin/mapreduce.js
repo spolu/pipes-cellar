@@ -6,50 +6,51 @@ var mongo = require('mongo');
 var cfg = require("./config.js");
 
 /**
- * A Acc object
+ * A Mpr object
  * 
- * Fetches the data accordingly to the function it was constructed with
+ * Constructs the map reduce request accordingly to the function it was
+ * constructed with
  *
- * @param spec {ctx, subject, accfun}
+ * @param spec {ctx, subject, mprfun}
  */
-var acc = function(spec, my) {
+var mpr = function(spec, my) {
   my = my || {};
   var _super = {};   
   
   my.subject = spec.subject;
   my.ctx = spec.ctx;  
 
-  if(spec.accfun && typeof spec.accfun === 'function') {
-    my.acc = function(sp, cb_) {
+  if(spec.mprfun && typeof spec.mprfun === 'function') {
+    my.mpr = function(sp, cb_) {
       try {
-	return spec.accfun(sp, cb_);
+	return spec.mprfun(sp, cb_);
       } catch (err) { 
 	my.ctx.log.error(err, true);
 	return null;
       }
     };
-    my.accdata = spec.accfun.toString();
+    my.mprdata = spec.mprfun.toString();
   }
   else
-    my.acc = function(spec, cont_) {
+    my.mpr = function(spec, cont_) {
       cont_();
     };
   
   var that = {};
 
-  var get, describe;
+  var mpr, describe;
   
-  get = function(spec, cb_) {
-    my.acc(spec, cb_);
+  mpr = function(spec, cb_) {
+    my.mpr(spec, cb_);
   };
   
   describe = function() {
     var data = { subject: my.subject,
-		 acc: my.accdata };
+		 mpr: my.mprdata };
     return data;
   };
   
-  that.method('get', get);
+  that.method('mpr', mpr);
   that.method('describe', describe);
   
   that.getter('subject', my, 'subject');  
@@ -59,7 +60,7 @@ var acc = function(spec, my) {
 
 
 /**
- * The Accessor Object
+ * The Mapreduce Object
  * 
  * Carries on ACC request and store the getters registered over the network
  *
@@ -67,36 +68,36 @@ var acc = function(spec, my) {
  *  
  * @param spec {mongo, config}
  */
-var accessor = function(spec, my) {
+var mapreduce = function(spec, my) {
   my = my || {};
   var _super = {};
   
   my.cfg = spec.config || cfg.config;
   my.mongo = spec.mongo;
 
-  my.accessors = {};
+  my.mprs = {};
 
   var that = {};
   
-  var register, unregister, accessor, list;
+  var register, unregister, mapreduce, list;
   
-  register = function(ctx, subject, accfun) {
+  register = function(ctx, subject, mprfun) {
     unregister(subject);
-    my.accessors[subject] = acc({ ctx: ctx,
-				  subject: subject, 
-				  accfun: accfun});
+    my.mprs[subject] = mpr({ ctx: ctx,
+			     subject: subject, 
+			     mprfun: mprfun});
     ctx.log.out('register: ' + subject);
   };
   
   unregister = function(ctx, subject) {
-    if(my.accessors.hasOwnProperty(subject)) {
-      delete my.accessors[subject];
+    if(my.mprs.hasOwnProperty(subject)) {
+      delete my.mprs[subject];
       ctx.log.out('unregister: ' + subject);
     }
   };
 
   /** cb_(res) */  
-  accessor = function(pipe, action, cb_) {
+  mapreduce = function(pipe, action, cb_) {
     if(action.targets().length === 0) {
       action.error(new Error('No target defined'));
       return;      
@@ -109,37 +110,39 @@ var accessor = function(spec, my) {
       action.error(new Error(msg));
       return;      
     }
-    if(!my.accessors[action.subject()]) {
-      action.error(new Error('No accessor for subject: ' + action.subject()));
+    if(!my.mprs[action.subject()]) {
+      action.error(new Error('No mapreduce for subject: ' + action.subject()));
       return;            
     }
     
-    my.mongo.get(
-      action, action.targets()[0],
-      function(object) {
-	action.log.debug('CBGET: ' + object._cid);
-	my.accessors[action.subject()].get(
-	  { pipe: pipe,
-	    action: action,
-	    target: action.targets()[0],
-	    object: object },
-	  /** @param result */ 
-	  function(result) {
-	    if(result)
+    /** generate mapreduce spec { map, reduce, ... } and call */
+    my.mprs[action.subject()].mpr(
+      { pipe: pipe,
+	action: action,
+	target: action.targets()[0] },
+      function(spec) {
+	if(spec && 
+	   typeof spec.map === 'function' &&
+	   typeof spec.reduce === 'function') {
+	  my.mongo.mapreduce(
+	    action, action.targets()[0],
+	    spec.map, spec.reduce, spec.options,
+	    function(result) {
 	      cb_(result);
-	    else {
-	      action.error(new Error('action unsupported by accessor: ' + target));
-	      return;
-	    }
-	  });
-      });    
+	    });
+	}
+	else {
+	  action.error(new Error('action unsupported by mapreduce: ' + target));
+	  return;
+	}
+      });        
   };
   
   list = function(subject) {
     var data = {};
-    for(var i in my.accessors) {
-      if(my.accessors.hasOwnProperty(i) && (!id || id === i)) {
-	data[i] = my.accessors[i].describe();
+    for(var i in my.mprs) {
+      if(my.mprs.hasOwnProperty(i) && (!id || id === i)) {
+	data[i] = my.mprs[i].describe();
       }	
     }   
     return data;
@@ -147,10 +150,10 @@ var accessor = function(spec, my) {
 
   that.method('register', register);
   that.method('unregister', unregister);
-  that.method('accessor', accessor);
+  that.method('mapreduce', mapreduce);
   that.method('list', list);
 
   return that;
 };
 
-exports.accessor = accessor;
+exports.mapreduce = mapreduce;

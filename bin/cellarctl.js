@@ -61,12 +61,12 @@ var pipectl = function(spec, my) {
     switch(cmd) {
 
     case 'register':
-      console.log('Usage: cellarctl <cellar-tag> register <upd|get> <subject> <function.js>');
+      console.log('Usage: cellarctl <cellar-tag> register <mut|acc|mpr> <subject> <function.js>');
       console.log('');
       break;
       
     case 'unregister':
-      console.log('Usage: cellarctl <cellar-tag> unregister <upd|get> <subject>');
+      console.log('Usage: cellarctl <cellar-tag> unregister <mut|acc|mpr> <subject>');
       console.log('');
       break;
       
@@ -91,7 +91,7 @@ var pipectl = function(spec, my) {
       break;
       
     case 'list':
-      console.log('Usage: cellarctl <cellar-tag> list <mut|acc|node> [subject|server:port]');
+      console.log('Usage: cellarctl <cellar-tag> list <mut|acc|mpr|node> [subject|server:port]');
       console.log('');
       break;
 
@@ -141,8 +141,9 @@ var pipectl = function(spec, my) {
 	help('register'); 
 	return; 
       }
-      if(args[0] !== 'upd' && 
-	 args[0] !== 'get') {
+      if(args[0] !== 'mut' && 
+	 args[0] !== 'acc' &&
+	 args[0] !== 'mpr') {
 	help('register'); 
 	return; 	
       }
@@ -154,8 +155,9 @@ var pipectl = function(spec, my) {
 	help('unregister'); 
 	return; 
       }
-      if(args[0] !== 'upd' && 
-	 args[0] !== 'get') {
+      if(args[0] !== 'mut' && 
+	 args[0] !== 'acc' &&
+	 args[0] !== 'mpr') {
 	help('unregister'); 
 	return; 	
       }
@@ -215,13 +217,14 @@ var pipectl = function(spec, my) {
       break;      
 
     case 'list':
-      console.log('Usage: cellarctl list <mut|acc|node> [subject|server:port]');
+      console.log('Usage: cellarctl list <mut|acc|mpr|node> [subject|server:port]');
       if(args.length < 1 || args.length > 2) { 
 	help('list'); 
 	return; 
       }
       if(args[0] !== 'mut' && 
 	 args[0] !== 'acc' &&
+	 args[0] !== 'mpr' &&
 	 args[0] !== 'node') {
 	help('list'); 
 	return; 	
@@ -251,10 +254,12 @@ var pipectl = function(spec, my) {
 	  console.log(err.stack);
 	  process.exit();
 	}
-	if(kind === 'upd')
-	  kind = 'updater';
-	if(kind === 'get')
-	  kind = 'getter';	
+	if(kind === 'mut')
+	  kind = 'mutator';
+	if(kind === 'acc')
+	  kind = 'accessor';	
+	if(kind === 'mpr')
+	  kind = 'mapreduce';	
 	var msg = fwk.message({});
 	msg.setType('c')
 	  .addTarget(ptag)
@@ -268,10 +273,12 @@ var pipectl = function(spec, my) {
 
   unregister = function(ptag, kind, subject) {
     var msg = fwk.message({});
-    if(kind === 'upd')
-      kind = 'updater';
-    if(kind === 'get')
-      kind = 'getter';	
+    if(kind === 'mut')
+      kind = 'mutator';
+    if(kind === 'acc')
+      kind = 'accessor';	
+    if(kind === 'mpr')
+      kind = 'mapreduce';	
     msg.setType('c')
       .addTarget(ptag)
       .setSubject('UNREGISTER')

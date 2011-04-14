@@ -6,32 +6,32 @@ var mongo = require('mongo');
 var cfg = require("./config.js");
 
 /**
- * An updater Object
+ * A mut Object
  * 
  * Applies the update using the function it is constructed with
  * 
- * @param spec {ctx, subject, updfun}
+ * @param spec {ctx, subject, mutfun}
  */
-var updater = function(spec, my) {
+var mut = function(spec, my) {
   my = my || {};
   var _super = {};   
   
   my.ctx = spec.ctx;
   my.subject = spec.subject;
   
-  if(spec.updfun && typeof spec.updfun === 'function') {
-    my.updater = function(sp, cb_) {
+  if(spec.mutfun && typeof spec.mutfun === 'function') {
+    my.mut = function(sp, cb_) {
       try {
-	return spec.updfun(sp, cb_);
+	return spec.mutfun(sp, cb_);
       } catch (err) { 
 	my.ctx.log.error(err, true);
 	return null;
       }
     };
-    my.updaterdata = spec.updfun.toString();
+    my.mutdata = spec.mutfun.toString();
   }
   else
-    my.updater = function(spec, cout_) {
+    my.mut = function(spec, cout_) {
       cont_();
     };
   
@@ -40,12 +40,12 @@ var updater = function(spec, my) {
   var update, describe;
   
   update = function(spec, cb_) {
-    my.updater(spec, cb_);
+    my.mut(spec, cb_);
   };
   
   describe = function() {
     var data = { subject: my.subject,
-		 updater: my.updaterdata };
+		 mut: my.mutdata };
     return data;
   };
   
@@ -62,7 +62,7 @@ var updater = function(spec, my) {
  * The Mutator Object
  * 
  * Carries on MUT request and store the updaters sent over the network
- * with UPD actions
+ * with mut actions
  *
  * @extends {}
  *  
@@ -75,23 +75,23 @@ var mutator = function(spec, my) {
   my.cfg = spec.config || cfg.config;
   my.mongo = spec.mongo;
 
-  my.updaters = {};
+  my.mutators = {};
   
   var that = {};
   
   var register, unregister, mutator, list;
   
-  register = function(ctx, subject, updfun) {
+  register = function(ctx, subject, mutfun) {
     unregister(subject);
-    my.updaters[subject] = updater({ ctx: ctx,
-				     subject: subject,
-				     updfun: updfun });
+    my.mutators[subject] = mut({ ctx: ctx,
+				 subject: subject,
+				 mutfun: mutfun });
     ctx.log.out('register: ' + subject);
   };
   
   unregister = function(ctx, subject) {
-    if(my.updaters.hasOwnProperty(subject)) {
-      delete my.updaters[subject];
+    if(my.mutators.hasOwnProperty(subject)) {
+      delete my.mutators[subject];
       ctx.log.out('unregister: ' + subject);
     }
   };
@@ -110,8 +110,8 @@ var mutator = function(spec, my) {
       action.error(new Error(msg));
       return;      
     }
-    if(!my.updaters[action.subject()]) {
-      action.error(new Error('No updater for subject: ' + action.subject()));
+    if(!my.mutators[action.subject()]) {
+      action.error(new Error('No mutator for subject: ' + action.subject()));
       return;            
     }
         
@@ -121,7 +121,7 @@ var mutator = function(spec, my) {
 	function(object) {
 	  action.log.debug('CBGET: ' + object._cid);
 	  var hash = object._hash;
-	  my.updaters[action.subject()].update(
+	  my.mutators[action.subject()].update(
 	    { pipe: pipe,
 	      action: action,
 	      target: target,
@@ -140,7 +140,7 @@ var mutator = function(spec, my) {
 		  });
 	      }
 	      else {
-		action.error(new Error('action unsupported by updater:' + target));
+		action.error(new Error('action unsupported by mutator:' + target));
 		return;
 	      }
 	    });
@@ -152,9 +152,9 @@ var mutator = function(spec, my) {
   
   list = function(subject) {
     var data = {};
-    for(var i in my.updaters) {
-      if(my.updaters.hasOwnProperty(i) && (!id || id === i)) {
-	data[i] = my.updaters[i].describe();
+    for(var i in my.mutators) {
+      if(my.mutators.hasOwnProperty(i) && (!id || id === i)) {
+	data[i] = my.mutators[i].describe();
       }	
     }   
     return data;
