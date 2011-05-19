@@ -10,5 +10,7 @@ config['PIPE_CONFIG_TAG'] = 'undefined';
 
 config['TINT_NAME'] = 'cellar';
 
+config['CELLAR_DBNAME'] = 'cellar';
+
 /** export merged configuration */
 exports.config = config;
