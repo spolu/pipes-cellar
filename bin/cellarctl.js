@@ -2,7 +2,7 @@
 
 var util = require('util');
 var fs = require('fs');
-var fwk = require('fwk');
+var fwk = require('pipes');
 
 var cfg = require("./config.js");
 
@@ -13,7 +13,7 @@ var cfg = require("./config.js");
  * 
  * @param spec {}
  */ 
-var pipectl = function(spec, my) {
+var cellarctl = function(spec, my) {
   my = my || {};
   var _super = {};
 
@@ -22,7 +22,7 @@ var pipectl = function(spec, my) {
   my.logger = fwk.logger();
   
   /** node can be picked up by using options */
-  my.pipe = require('pipe').pipe({});
+  my.pipe = require('pipes').pipe({});
   
   var that = {};
   
@@ -109,7 +109,7 @@ var pipectl = function(spec, my) {
     console.log('Usage: cellarctl <cellar-tag> <command>');
     console.log('');
     console.log('<cellar-tag> is the tag used to subscribe');
-    console.log('to pipe config registration');
+    console.log('to pipes config registration');
     console.log('');
     console.log('<comand> is one of:');
     console.log('   register, unregister, addnode, delnode');
@@ -345,4 +345,4 @@ var pipectl = function(spec, my) {
 };
 
 /** main */
-pipectl({}).main();
+cellarctl({}).main();

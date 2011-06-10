@@ -1,7 +1,7 @@
 #!/usr/local/bin/node
 
 var util = require('util');
-var fwk = require('fwk');
+var fwk = require('pipes');
 var mongo = require('mongo');
 
 var cfg = require("./config.js");
@@ -298,8 +298,8 @@ var cellar = function(spec, my) {
 	   ctx.log.error(err);
 	 });
     
-    p.subscribe(my.cfg['PIPE_CONFIG_REG'], 
-		my.cfg['PIPE_CONFIG_TAG']);
+    p.subscribe(my.cfg['PIPES_CONFIG_REG'], 
+		my.cfg['PIPES_CONFIG_TAG']);
 
     if(pipe) {
       var reply = fwk.message.reply(msg);
@@ -399,8 +399,8 @@ var cellar = function(spec, my) {
     var msg = fwk.message({});
     msg.setType('c')
       .setSubject('ADDNODE')
-      .setBody({ server: my.cfg['PIPE_BOOTSTRAP_SERVER'],
-		 port: my.cfg['PIPE_BOOTSTRAP_PORT'] });
+      .setBody({ server: my.cfg['PIPES_BOOTSTRAP_SERVER'],
+		 port: my.cfg['PIPES_BOOTSTRAP_PORT'] });
     
     /** We add the bootstrap node */
     var ctx = fwk.context({ config: my.cfg,
