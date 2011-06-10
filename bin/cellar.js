@@ -279,8 +279,8 @@ var cellar = function(spec, my) {
 
     /** Defaults will be overridden by configuration */
     my.pipe[spec.server + ':' + spec.port] = 
-      require('pipe').pipe({ server: spec.server,
-			     port: spec.port });
+      require('pipes').pipe({ server: spec.server,
+			      port: spec.port });
     var p = my.pipe[spec.server + ':' + spec.port];
     
     p.on('1w', forward(p));
