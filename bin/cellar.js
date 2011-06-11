@@ -2,7 +2,7 @@
 
 var util = require('util');
 var fwk = require('pipes');
-var mongo = require('mongo');
+var mongo = require('../lib/mongo.js');
 
 var cfg = require("./config.js");
 
