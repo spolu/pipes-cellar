@@ -10,6 +10,7 @@ NEXT CHANGELOG:
 
 - added headers to mutator update
 - config driven db name
+- modified consistency model not writeback more consistency window
 
 CHANGELOG v0.1.4:
 
