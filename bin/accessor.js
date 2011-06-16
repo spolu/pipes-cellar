@@ -1,7 +1,6 @@
 var util = require('util');
 var fwk = require('pipes');
 var cellar = require('cellar');
-var mongo = require('mongo');
 
 var cfg = require("./config.js");
 
