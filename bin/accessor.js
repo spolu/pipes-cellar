@@ -48,10 +48,10 @@ var acc = function(spec, my) {
     return data;
   };
   
-  that.method('get', get);
-  that.method('describe', describe);
+  fwk.method(that, 'get', get);
+  fwk.method(that, 'describe', describe);
   
-  that.getter('subject', my, 'subject');  
+  fwk.getter(that, 'subject', my, 'subject');  
 
   return that;
 };
@@ -144,10 +144,10 @@ var accessor = function(spec, my) {
     return data;
   };
 
-  that.method('register', register);
-  that.method('unregister', unregister);
-  that.method('accessor', accessor);
-  that.method('list', list);
+  fwk.method(that, 'register', register);
+  fwk.method(that, 'unregister', unregister);
+  fwk.method(that, 'accessor', accessor);
+  fwk.method(that, 'list', list);
 
   return that;
 };

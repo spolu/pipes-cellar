@@ -48,10 +48,10 @@ var mut = function(spec, my) {
     return data;
   };
   
-  that.method('update', update);
-  that.method('describe', describe);
+  fwk.method(that, 'update', update);
+  fwk.method(that, 'describe', describe);
   
-  that.getter('subject', my, 'subject');  
+  fwk.getter(that, 'subject', my, 'subject');  
 
   return that;
 };
@@ -159,10 +159,10 @@ var mutator = function(spec, my) {
     return data;
   };
 
-  that.method('register', register);
-  that.method('unregister', unregister);
-  that.method('mutator', mutator);
-  that.method('list', list);
+  fwk.method(that, 'register', register);
+  fwk.method(that, 'unregister', unregister);
+  fwk.method(that, 'mutator', mutator);
+  fwk.method(that, 'list', list);
 
   return that;
 };

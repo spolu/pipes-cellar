@@ -339,7 +339,7 @@ var cellarctl = function(spec, my) {
     send(msg);    
   };
 
-  that.method('main', main);
+  fwk.method(that, 'main', main);
   
   return that;
 };

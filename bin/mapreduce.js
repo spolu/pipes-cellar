@@ -49,10 +49,10 @@ var mpr = function(spec, my) {
     return data;
   };
   
-  that.method('mpr', mpr);
-  that.method('describe', describe);
+  fwk.method(that, 'mpr', mpr);
+  fwk.method(that, 'describe', describe);
   
-  that.getter('subject', my, 'subject');  
+  fwk.getter(that, 'subject', my, 'subject');  
 
   return that;
 };
@@ -147,10 +147,10 @@ var mapreduce = function(spec, my) {
     return data;
   };
 
-  that.method('register', register);
-  that.method('unregister', unregister);
-  that.method('mapreduce', mapreduce);
-  that.method('list', list);
+  fwk.method(that, 'register', register);
+  fwk.method(that, 'unregister', unregister);
+  fwk.method(that, 'mapreduce', mapreduce);
+  fwk.method(that, 'list', list);
 
   return that;
 };

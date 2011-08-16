@@ -48,7 +48,7 @@ var search = function(spec, my) {
       });
   };
   
-  that.method('search', search);
+  fwk.method(that, 'search', search);
   
   return that;
 };
