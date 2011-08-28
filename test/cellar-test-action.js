@@ -1,5 +1,5 @@
 var util = require('util');
-var cellar = require('cellar');
+var cellar = require('pipes-cellar');
 
 
 var a = cellar.action({ type:'MUT',

@@ -1,7 +1,7 @@
 var util = require('util');
 
 var pipe = require('pipes').pipe({});
-var cellar = require('cellar');
+var cellar = require('pipes-cellar');
 
 var subject = process.argv[2] || '';
 var target = process.argv[3] || '';

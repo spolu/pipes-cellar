@@ -6,7 +6,13 @@ TODOs:
 - resiliance to mongoDB disconnect + queue?
 - push error message onto pipe whenever an action fail
 
-NEXT CHANGELOG:
+CHANGELOG v0.3.2:
+
+- rename to pipes-cellar
+- move to node 0.5.5
+- support for mongo url
+
+CHANGELOG v0.2:
 
 - added headers to mutator update
 - config driven db name
