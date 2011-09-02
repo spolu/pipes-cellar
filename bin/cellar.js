@@ -45,8 +45,7 @@ var cellar = function(spec, my) {
   my.port = spec.port || my.cfg['CELLAR_PORT'];
     
   my.pipe = {};
-  my.mongo = mongo.mongo({ baseurl: my.cfg['CELLAR_BASEURL'],
-			   dbname: my.cfg['CELLAR_DBNAME'] });
+  my.mongo = mongo.mongo({ dbname: my.cfg['CELLAR_DBNAME'] });
 
   my.mutator = require('./mutator.js').mutator({ mongo: my.mongo,
 						 config: my.cfg });  

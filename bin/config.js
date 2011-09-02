@@ -32,7 +32,6 @@ config['PIPES_CONFIG_TAG'] = 'undefined';
 config['TINT_NAME'] = 'cellar';
 
 config['CELLAR_DBNAME'] = 'cellar';
-config['CELLAR_BASEURL'] = 'mongodb://localhost:27017/';
 
 /** export merged configuration */
 exports.config = config;
