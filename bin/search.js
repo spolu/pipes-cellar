@@ -76,8 +76,8 @@ var search = function(spec, my) {
       my.mongo.find(
 	  action, 
 	  action.targets()[0],
-	  action.body().selector,
-	  action.body().options,	  
+	  selector,
+	  options,	  
 	  function(result) {
 	      cb_(result);
 	  });
