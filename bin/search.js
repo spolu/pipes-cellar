@@ -71,13 +71,11 @@ var search = function(spec, my) {
 	  return;      	  
       }
       var selector = action.body().selector || {};
-      var options = action.body().options || undefined;
 
       my.mongo.find(
 	  action, 
 	  action.targets()[0],
 	  selector,
-	  options,	  
 	  function(result) {
 	      cb_(result);
 	  });
