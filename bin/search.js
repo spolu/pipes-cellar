@@ -47,31 +47,45 @@ var search = function(spec, my) {
   
   /** cb_(res) */  
   search = function(pipe, action, cb_) {
-    if(action.targets().length === 0) {
-      action.error(new Error('No target defined'));
-      return;      
-    }
-    if(action.targets().length !== 1) {
-      var msg = 'Multiple targets defined:';
-      for(var i = 0; i < action.targets().length; i ++) {
-	msg += ' ' + action.targets()[i];
+      if(action.targets().length === 0) {
+	  action.error(new Error('No target defined'));
+	  return;      
       }
-      action.error(new Error(msg));
-      return;      
-    }
+      
+      if(action.targets().length !== 1) {
+	  var msg = 'Multiple targets defined:';
+	  for(var i = 0; i < action.targets().length; i ++) {
+	      msg += ' ' + action.targets()[i];
+	  }
+	  action.error(new Error(msg));
+	  return;      
+      }
 
-    my.mongo.find(
-      action, 
-      action.targets()[0],
-      action.body(),
-      function(result) {
-	cb_(result);
-      });
+      if(!action.body()) {
+	  action.error(new Error('No body defined'));
+	  return;      	  	  
+      }
+      
+      if(typeof action.body().selector === 'undefined') {
+	  action.error(new Error('No selector defined'));
+	  return;      	  
+      }
+      var selector = action.body().selector || {};
+      var options = action.body().options || {};
+
+      my.mongo.find(
+	  action, 
+	  action.targets()[0],
+	  action.body().selector,
+	  action.body().options,	  
+	  function(result) {
+	      cb_(result);
+	  });
   };
-  
-  fwk.method(that, 'search', search);
-  
-  return that;
+    
+    fwk.method(that, 'search', search);
+    
+    return that;
 };
 
 exports.search = search;
