@@ -71,7 +71,7 @@ var search = function(spec, my) {
 	  return;      	  
       }
       var selector = action.body().selector || {};
-      var options = action.body().options || {};
+      var options = action.body().options || undefined;
 
       my.mongo.find(
 	  action, 
