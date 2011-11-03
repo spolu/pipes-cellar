@@ -1,7 +1,7 @@
 {
   "name": "pipes-cellar",
   "description": "Pipes Cellar Storage Management Binary",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "author": "Stanislas Polu <stan@bipsly.com>",
   "keywords": ["storage", "pipe", "mongo"],
   "dependencies": { "pipes": ">= 0.3.0",
