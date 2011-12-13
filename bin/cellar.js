@@ -98,7 +98,7 @@ var cellar = function(spec, my) {
 
 	case 'MUT-1w':  
 	case 'MUT-2w':  
-	  action.log.out(action.toString());
+	  action.log.debug(action.toString());
 	  my.mutator.mutator(pipe, action, function(res, hdrs) {
 			       if(action.msg().type() === '2w') {				 
 				 var reply = fwk.message.reply(action.msg());
@@ -110,7 +110,7 @@ var cellar = function(spec, my) {
 	  break;
 
 	case 'ACC-2w':
-	  action.log.out(action.toString());
+	  action.log.debug(action.toString());
 	  my.accessor.accessor(pipe, action, function(res) {
 				 if(action.msg().type() === '2w') {
 				   var reply = fwk.message.reply(action.msg());
@@ -121,7 +121,7 @@ var cellar = function(spec, my) {
 	  break;
 	  
 	case 'SRH-2w':	  
-	  action.log.out(action.toString());
+	  action.log.debug(action.toString());
 	  my.search.search(pipe, action, function(res) {
 			     if(action.msg().type() === '2w') {
 			       var reply = fwk.message.reply(action.msg());
@@ -132,7 +132,7 @@ var cellar = function(spec, my) {
 	  break;
 
 	case 'MPR-2w':	  
-	  action.log.out(action.toString());
+	  action.log.debug(action.toString());
 	  my.mapreduce.mapreduce(pipe, action, function(res) {
 				   if(action.msg().type() === '2w') {
 				     var reply = fwk.message.reply(action.msg());
